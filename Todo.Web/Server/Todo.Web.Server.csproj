@@ -19,7 +19,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\TodoApp.ServiceDefaults\TodoApp.ServiceDefaults.csproj" />
-    <ProjectReference Include="..\Client\Todo.Web.Client.csproj" />
     <ProjectReference Include="..\Shared\Todo.Web.Shared.csproj" />
   </ItemGroup>
 

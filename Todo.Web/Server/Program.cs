@@ -1,4 +1,3 @@
-using Todo.Web.Client;
 using Todo.Web.Server;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,11 +11,7 @@ builder.Services.AddAuthorizationBuilder();
 // Configure data protection, setup the application discriminator so that the data protection keys can be shared between the BFF and this API
 builder.Services.AddDataProtection(o => o.ApplicationDiscriminator = "TodoApp");
 
-// Must add client services
-builder.Services.AddScoped<TodoClient>();
-
-builder.Services.AddRazorComponents()
-                .AddInteractiveWebAssemblyComponents();
+builder.Services.AddAntiforgery();
 
 // Add the forwarder to make sending requests to the backend easier
 builder.Services.AddHttpForwarderWithServiceDiscovery();
@@ -32,13 +27,8 @@ var app = builder.Build();
 app.MapDefaultEndpoints();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
 {
-    app.UseWebAssemblyDebugging();
-}
-else
-{
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -46,8 +36,6 @@ app.UseHttpsRedirection();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
-app.MapRazorComponents<App>()
-   .AddInteractiveWebAssemblyRenderMode();
 
 // Configure the APIs
 app.MapAuth();
