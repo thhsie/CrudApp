@@ -5,9 +5,49 @@ namespace TodoApi;
 
 // This is our TodoUser, we can modify this if we need
 // to add custom properties to the user
-public class TodoUser : IdentityUser { }
+public class TodoUser : IdentityUser
+{
+    #region Leave balances
+    public LeaveBalances LeaveBalances { get; private set; } = null!;
 
-// This is the DTO used to exchange username and password details to 
+    public void SetLeaveBalances(int paidLeavesBalance, int sickLeavesBalance, int specialLeavesBalance)
+    {
+        LeaveBalances = new LeaveBalances(paidLeavesBalance, sickLeavesBalance, specialLeavesBalance);
+    }
+
+    public void IncreaseAnnualLeaves(int amount)
+    {
+        LeaveBalances = LeaveBalances.IncreaseAnnualLeaves(amount);
+    }
+
+    public void DecreaseAnnualLeaves(int amount)
+    {
+        LeaveBalances = LeaveBalances.DecreaseAnnualLeaves(amount);
+    }
+
+    public void IncreaseSickLeaves(int amount)
+    {
+        LeaveBalances = LeaveBalances.IncreaseSickLeaves(amount);
+    }
+
+    public void DecreaseSickLeaves(int amount)
+    {
+        LeaveBalances = LeaveBalances.DecreaseSickLeaves(amount);
+    }
+
+    public void IncreaseSpecialLeaves(int amount)
+    {
+        LeaveBalances = LeaveBalances.IncreaseSpecialLeaves(amount);
+    }
+
+    public void DecreaseSpecialLeaves(int amount)
+    {
+        LeaveBalances = LeaveBalances.DecreaseSpecialLeaves(amount);
+    }
+    #endregion
+}
+
+// This is the DTO used to exchange username and password details to
 // the create user and token endpoints
 public class UserInfo
 {
