@@ -29,3 +29,13 @@ public class ExternalUserInfo
 }
 
 public record AuthToken([property: JsonPropertyName("accessToken")] string Token);
+
+// To assign a role to a user
+public class UserRole
+{
+    [Required]
+    public string Email { get; set; } = default!;
+
+    [Required]
+    public string Role { get; set; } = default!;
+}

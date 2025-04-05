@@ -41,5 +41,6 @@ app.MapStaticAssets();
 app.MapAuth();
 app.MapTodos();
 app.MapLeaves();
+app.MapRoles();
 
 app.Run();

@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace TodoApi;
 
-public class TodoDbContext(DbContextOptions<TodoDbContext> options) : IdentityDbContext<TodoUser>(options)
+public class TodoDbContext(DbContextOptions<TodoDbContext> options) : IdentityDbContext<TodoUser, IdentityRole, string>(options)
 {
     public DbSet<Todo> Todos => Set<Todo>();
     public DbSet<Leave> Leaves => Set<Leave>();

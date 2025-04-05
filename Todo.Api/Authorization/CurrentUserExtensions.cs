@@ -26,6 +26,14 @@ public static class CurrentUserExtensions
                 // Resolve the user manager and see if the current user is a valid user in the database
                 // we do this once and store it on the current user.
                 currentUser.User = await userManager.FindByIdAsync(id);
+
+                // Ensure roles are loaded
+                if (currentUser.User != null)
+                {
+                    var roles = await userManager.GetRolesAsync(currentUser.User);
+                    var identity = (ClaimsIdentity)principal.Identity!;
+                    identity.AddClaims(roles.Select(r => new Claim(ClaimTypes.Role, r)));
+                }
             }
 
             return principal;

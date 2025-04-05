@@ -65,4 +65,16 @@ public class ExternalUserInfo
 
     [Required]
     public string ProviderKey { get; set; } = default!;
+
+    public string? Email { get; set; }
+}
+
+// To assign a role to a user
+public class UserRole
+{
+    [Required]
+    public string Email { get; set; } = default!;
+
+    [Required]
+    public string Role { get; set; } = default!;
 }

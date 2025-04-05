@@ -16,6 +16,7 @@ builder.Services.AddAuthorizationBuilder().AddCurrentUserHandler();
 
 // Configure identity
 builder.Services.AddIdentityCore<TodoUser>()
+                .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<TodoDbContext>()
                 .AddApiEndpoints();
 
@@ -42,6 +43,36 @@ builder.Services.AddHttpLogging(o =>
 });
 
 var app = builder.Build();
+
+await using (var scope = app.Services.CreateAsyncScope())
+await using (var dbContext = scope.ServiceProvider.GetRequiredService<TodoDbContext>())
+{
+    // Ensure roles exist
+    await dbContext.Database.EnsureCreatedAsync();
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    if (!await roleManager.RoleExistsAsync("Admin"))
+    {
+        await roleManager.CreateAsync(new IdentityRole("Admin"));
+    }
+    if (!await roleManager.RoleExistsAsync("Standard"))
+    {
+        await roleManager.CreateAsync(new IdentityRole("Standard"));
+    }
+    // Add a default admin user
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<TodoUser>>();
+    if (await userManager.FindByNameAsync("admin") is null)
+    {
+        var adminUser = builder.Configuration.GetSection("AdminUser");
+        var adminUserName = "admin";
+        var adminUserEmail = adminUser["Email"] ?? "admin@dev.com";
+        var adminUserPassword = adminUser["Password"] ?? "Pass123$";
+
+        var admin = new TodoUser { UserName = adminUserName, Email = adminUserEmail };
+        await userManager.CreateAsync(admin, adminUserPassword);
+        await userManager.AddToRoleAsync(admin, "Admin");
+        await userManager.UpdateAsync(admin);
+    }
+}
 
 app.UseHttpLogging();
 app.UseRateLimiter();
