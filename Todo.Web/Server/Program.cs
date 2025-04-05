@@ -40,6 +40,6 @@ app.MapStaticAssets();
 // Configure the APIs
 app.MapAuth();
 app.MapTodos();
+app.MapLeaves();
 
 app.Run();
-

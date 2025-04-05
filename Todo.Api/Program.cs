@@ -64,5 +64,6 @@ app.Map("/", () => Results.Redirect("/scalar/v1"));
 // Configure the APIs
 app.MapTodos();
 app.MapUsers();
+app.MapLeaves();
 
 app.Run();
