@@ -93,8 +93,46 @@ public static class AuthApi
 
             // TODO: Handle the failure somehow
 
-            return Results.Redirect("/");
+            return Results.Redirect("http://localhost:5173");
         });
+
+        // Endpoint to get current user details based on the BFF session cookie
+        group.MapGet("/me", (HttpContext context) =>
+        {
+            var user = context.User;
+
+            // We expect the cookie authentication middleware to have run
+            if (user?.Identity?.IsAuthenticated != true)
+            {
+                // Should be caught by RequireAuthorization, but good safeguard
+                return Results.Unauthorized();
+            }
+
+            // Extract claims populated by the SignIn method
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            var name = user.FindFirstValue(ClaimTypes.Name); // This is the name/email stored during SignIn
+            // Roles *should* be fetched by the API ClaimsTransformation and added there
+            // But the BFF doesn't know about them unless explicitly added to *its* principal during SignIn.
+            // For now, we assume roles are *not* in the BFF cookie principal directly.
+            // The API token inside the cookie is what grants role access on the API side.
+            // The frontend will determine roles based on *something else* for now (like email match).
+            // TODO: Find a way to reliably get roles into the BFF principal or trust frontend logic.
+
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(name))
+            {
+                // If essential claims are missing from the BFF principal
+                return Results.Problem("Essential user claims missing in session.", statusCode: 500);
+            }
+
+            // Return structure matching frontend User type (approximated)
+            return Results.Ok(new {
+                // Use the claims stored in the BFF cookie
+                Id = userId, // This might be external provider ID or email depending on login type
+                Email = name, // This is the ClaimTypes.Name stored during SignIn
+                Roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray() // Get roles IF they were added during SignIn
+            });
+        })
+        .RequireAuthorization(); // Ensure only authenticated users can access
 
         return group;
     }
