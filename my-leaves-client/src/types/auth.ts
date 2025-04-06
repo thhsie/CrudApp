@@ -4,7 +4,8 @@
 export interface User {
     id: string; // User's unique identifier (GUID from backend, or email as fallback)
     email: string; // User's email
-    roles: string[]; // Roles like "Admin", "Standard"
+    isAdmin: boolean;
+    //roles: string[]; // Roles like "Admin", "Standard"
   }
 
 /** Data required for standard login via BFF */

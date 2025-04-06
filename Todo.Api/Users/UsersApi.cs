@@ -95,6 +95,16 @@ public static class UsersApi
             return Results.Ok();
         }).RequireAuthorization(pb => pb.RequireCurrentUser());
 
+        group.MapGet("/me", (CurrentUser currentUser) =>
+        {
+            return Results.Ok(new
+            {
+                currentUser.Id,
+                currentUser.User?.Email,
+                currentUser.IsAdmin,
+            });
+        }).RequireAuthorization(pb => pb.RequireCurrentUser());
+
         return group;
     }
 }

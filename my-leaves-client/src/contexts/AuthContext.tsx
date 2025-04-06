@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const isAuthenticated = !!user;
-  const isAdmin = !!user?.roles?.includes('Admin');
+  const isAdmin = !!user?.isAdmin;
 
   // Check auth state function - NOW RELIABLE
   const checkAuthState = useCallback(async (calledDuringLoad = false) => {

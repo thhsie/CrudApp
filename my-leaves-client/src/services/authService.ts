@@ -10,13 +10,13 @@ const AUTH_BASE_URL = '/auth';
 const fetchCurrentUserAfterAction = async (): Promise<User | null> => {
     try {
         // --- Ideal: Replace with actual BFF endpoint ---
-        // const response = await api.get<User>('/auth/me');
-        // return response.data;
+        const response = await api.get<User>('/users/me');
+        return response.data;
 
         // --- Workaround Check (less reliable) ---
-        await api.get('/leaves?limit=1'); // Ping protected route
-        // Cannot get details here, return placeholder signal
-        return { isAuthenticated: true } as unknown as User;
+        // await api.get('/leaves?limit=1'); // Ping protected route
+        // // Cannot get details here, return placeholder signal
+        // return { isAuthenticated: true } as unknown as User;
 
     } catch (error: any) {
         if (error.response && error.response.status === 401) {
@@ -56,7 +56,7 @@ export const authService = {
   /** Fetches the current user details from the BFF */
   fetchCurrentUser: async (): Promise<User | null> => {
      try {
-        const response = await api.get<User>(`${AUTH_BASE_URL}/me`); // Call the new endpoint
+        const response = await api.get<User>(`users/me`); // Call the new endpoint
         return response.data; // Returns the User object on success
     } catch (error: any) {
         if (error.response && error.response.status === 401) {
@@ -81,4 +81,15 @@ export const authService = {
 
   // Add other provider functions if needed
   // initiateGitHubLogin: (): void => { ... }
+
+  /** Fetches user roles from the BFF */
+  fetchUserRoles: async (email: string): Promise<string[]> => {
+    try {
+      const response = await api.get('/users/roles', { params: { email: email } });
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to fetch user roles:', error);
+      throw error;
+    }
+  },
 };
