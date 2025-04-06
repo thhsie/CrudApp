@@ -1,4 +1,3 @@
-// --- Updated File: ./my-leaves-client/src/types/leave.ts ---
 // Matches the backend API enums and DTOs
 
 /** Matches the LeaveType enum in the backend API */

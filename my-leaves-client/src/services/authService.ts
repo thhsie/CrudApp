@@ -1,6 +1,6 @@
-// --- Updated File: ./my-leaves-client/src/services/authService.ts ---
 import api from './api';
 import { LoginDto, RegisterDto, User } from '../types/auth';
+import { AxiosError } from 'axios';
 
 const AUTH_BASE_URL = '/auth';
 
@@ -18,8 +18,8 @@ const fetchCurrentUserAfterAction = async (): Promise<User | null> => {
         // // Cannot get details here, return placeholder signal
         // return { isAuthenticated: true } as unknown as User;
 
-    } catch (error: any) {
-        if (error.response && error.response.status === 401) {
+    } catch (error) {
+        if (error instanceof AxiosError && error.response && error.response.status === 401) {
             return null; // Not authenticated
         }
         console.error("Failed to fetch user details after auth action", error);
@@ -58,8 +58,8 @@ export const authService = {
      try {
         const response = await api.get<User>(`users/me`); // Call the new endpoint
         return response.data; // Returns the User object on success
-    } catch (error: any) {
-        if (error.response && error.response.status === 401) {
+    } catch (error) {
+        if (error instanceof AxiosError && error.response && error.response.status === 401) {
             return null; // Not authenticated
         }
         console.error("Failed to fetch current user:", error);
@@ -87,7 +87,7 @@ export const authService = {
     try {
       const response = await api.get('/users/roles', { params: { email: email } });
       return response.data;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to fetch user roles:', error);
       throw error;
     }

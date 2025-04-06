@@ -1,4 +1,3 @@
-// --- Updated File: ./my-leaves-client/src/services/api.ts ---
 import axios from 'axios';
 import { authService } from './authService';
 

@@ -1,5 +1,3 @@
-// --- Updated File: ./my-leaves-client/src/pages/NotFound.tsx ---
-import React from 'react';
 import { Link } from 'react-router-dom';
 
 export const NotFound = () => {

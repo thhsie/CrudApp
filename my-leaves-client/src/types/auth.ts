@@ -1,5 +1,3 @@
-// --- Updated File: ./my-leaves-client/src/types/auth.ts ---
-
 /** Basic user information derived from the authentication context */
 export interface User {
     id: string; // User's unique identifier (GUID from backend, or email as fallback)

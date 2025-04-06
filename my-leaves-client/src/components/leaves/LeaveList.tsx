@@ -1,4 +1,3 @@
-// --- Updated File: ./my-leaves-client/src/components/leaves/LeaveList.tsx ---
 import React, { useState } from 'react';
 import { Leave, LeaveStatus } from '../../types/leave';
 import { LeaveCard } from './LeaveCard';

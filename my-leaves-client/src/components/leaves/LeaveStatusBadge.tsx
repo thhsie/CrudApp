@@ -1,5 +1,3 @@
-// --- Updated File: ./my-leaves-client/src/components/leaves/LeaveStatusBadge.tsx ---
-import React from 'react';
 import { LeaveStatus } from '../../types/leave';
 
 interface LeaveStatusBadgeProps {
@@ -12,20 +10,19 @@ export const LeaveStatusBadge = ({ status }: LeaveStatusBadgeProps) => {
 
   switch (status) {
     case LeaveStatus.Approved:
-      badgeClass = 'badge-success'; // Use daisyUI semantic color
+      badgeClass = 'badge-success';
       statusText = 'Approved';
       break;
     case LeaveStatus.Rejected:
-      badgeClass = 'badge-error'; // Use daisyUI semantic color
+      badgeClass = 'badge-error';
       statusText = 'Rejected';
       break;
     case LeaveStatus.Pending:
-      badgeClass = 'badge-warning'; // Use daisyUI semantic color
+      badgeClass = 'badge-warning';
       statusText = 'Pending';
       break;
     default:
-      badgeClass = 'badge-ghost'; // Fallback style
-      // Log unexpected status
+      badgeClass = 'badge-ghost';
       console.warn(`Unknown leave status encountered: ${status}`);
       break;
   }

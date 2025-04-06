@@ -1,4 +1,3 @@
-// --- Updated File: ./my-leaves-client/src/hooks/useLeaves.ts ---
 import { useMutation, useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
 import { leaveService } from '../services/leaveService';
 import { Leave, LeaveRequestData } from '../types/leave';

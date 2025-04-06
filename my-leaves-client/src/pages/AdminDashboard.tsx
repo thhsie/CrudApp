@@ -1,6 +1,4 @@
-// --- Updated File: ./my-leaves-client/src/pages/AdminDashboard.tsx ---
 import React from 'react';
-// Layout included via router
 import { LeaveList } from '../components/leaves/LeaveList';
 import { useLeaves } from '../hooks/useLeaves';
 import { LeaveStatus } from '../types/leave';

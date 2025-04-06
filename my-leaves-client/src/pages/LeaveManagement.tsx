@@ -1,7 +1,5 @@
-// --- Updated File: ./my-leaves-client/src/pages/LeaveManagement.tsx ---
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation,} from 'react-router-dom';
-// Layout is handled by router
 import { LeaveList } from '../components/leaves/LeaveList';
 import { LeaveForm } from '../components/leaves/LeaveForm';
 import { useLeaves } from '../hooks/useLeaves';

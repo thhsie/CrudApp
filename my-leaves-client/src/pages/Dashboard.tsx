@@ -1,8 +1,6 @@
-// --- Updated File: ./my-leaves-client/src/pages/Dashboard.tsx ---
 import React from 'react';
 import { useLeaves } from '../hooks/useLeaves';
 import { LeaveList } from '../components/leaves/LeaveList';
-// Layout is handled by router
 import { useAuth } from '../contexts/AuthContext';
 import { LeaveStatus } from '../types/leave';
 import { Link } from 'react-router-dom';

@@ -1,4 +1,3 @@
-// --- Updated File: ./my-leaves-client/src/components/auth/GoogleLogin.tsx ---
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -16,9 +15,9 @@ export const GoogleLogin = () => {
   return (
     <button
       onClick={handleClick}
-      className={`btn btn-outline w-full ${isLoading ? 'btn-disabled' : ''}`} // Use btn-disabled
+      className={`btn btn-outline w-full ${isLoading ? 'btn-disabled' : ''}`}
       disabled={isLoading}
-      aria-label="Sign in with Google" // Better accessibility
+      aria-label="Sign in with Google"
     >
        {isLoading ? (
          <span className="loading loading-spinner loading-xs mr-2"></span>
@@ -26,11 +25,11 @@ export const GoogleLogin = () => {
         // Google Icon SVG
         <svg
             xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 48 48" // Use standard 48x48 viewBox for Google icon
-            width="24" // Keep display size
+            viewBox="0 0 48 48"
+            width="24"
             height="24"
-            className="mr-2" // Keep margin
-            aria-hidden="true" // Hide decorative icon from screen readers
+            className="mr-2"
+            aria-hidden="true"
         >
             <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
             <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>

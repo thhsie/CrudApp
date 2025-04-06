@@ -1,5 +1,4 @@
-// --- Updated File: ./my-leaves-client/src/components/leaves/LeaveCard.tsx ---
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Leave, LeaveStatus, LeaveType } from '../../types/leave';
 import { LeaveStatusBadge } from './LeaveStatusBadge';
 import { ConfirmDialog } from '../ui/ConfirmDialog';

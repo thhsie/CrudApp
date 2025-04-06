@@ -1,4 +1,3 @@
-// --- Updated File: ./my-leaves-client/src/components/layout/Sidebar.tsx ---
 import { useAuth } from '../../contexts/AuthContext';
 import { NavLink } from 'react-router-dom';
 

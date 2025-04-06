@@ -1,6 +1,3 @@
-// --- Updated File: ./my-leaves-client/src/components/ui/ErrorDisplay.tsx ---
-import React from 'react';
-
 interface ErrorDisplayProps {
     message: string;
   }

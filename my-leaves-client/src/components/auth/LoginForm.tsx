@@ -1,7 +1,13 @@
-// --- Updated File: ./my-leaves-client/src/components/auth/LoginForm.tsx ---
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { ErrorDisplay } from '../ui/ErrorDisplay'; // Use ErrorDisplay component
+import { ErrorDisplay } from '../ui/ErrorDisplay';
+
+interface LoginError {
+  response?: {
+    data?: { message?: string };
+  };
+  message?: string;
+}
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -18,8 +24,8 @@ export const LoginForm = () => {
     try {
       await login(email, password);
       // Success - redirection will happen in the auth context or router
-    } catch (err: any) { // Catch specific error type if possible
-      setError(err.response?.data?.message || err.message || 'Invalid email or password.');
+    } catch (err: unknown) { // Catch specific error type if possible
+      setError((err as LoginError).response?.data?.message || (err as LoginError).message || 'Invalid email or password.');
     } finally {
       setIsLoading(false);
     }

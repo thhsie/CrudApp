@@ -1,4 +1,3 @@
-// --- Updated File: ./my-leaves-client/src/router.tsx ---
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
@@ -6,8 +5,8 @@ import { LeaveManagement } from './pages/LeaveManagement';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { NotFound } from './pages/NotFound';
 import { useAuth } from './contexts/AuthContext';
-import { Layout } from './components/layout/Layout'; // Import Layout
-import { Loading } from './components/ui/Loading'; // Import Loading
+import { Layout } from './components/layout/Layout';
+import { Loading } from './components/ui/Loading';
 import { JSX } from 'react';
 
 // Protected route component

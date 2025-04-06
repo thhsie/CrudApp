@@ -1,4 +1,3 @@
-// --- Updated File: ./my-leaves-client/src/services/leaveService.ts ---
 import api from './api';
 import { Leave, LeaveRequestData } from '../types/leave';
 

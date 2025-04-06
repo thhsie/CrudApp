@@ -1,4 +1,3 @@
-// --- Updated File: ./my-leaves-client/src/components/ui/ConfirmDialog.tsx ---
 import React, { ReactNode, useRef, useEffect } from 'react';
 
 interface ConfirmDialogProps {

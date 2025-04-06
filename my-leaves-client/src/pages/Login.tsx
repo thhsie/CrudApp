@@ -1,13 +1,12 @@
-// --- Updated File: ./my-leaves-client/src/pages/Login.tsx ---
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { LoginForm } from '../components/auth/LoginForm';
 import { GoogleLogin } from '../components/auth/GoogleLogin';
 import { useAuth } from '../contexts/AuthContext';
-import { Loading } from '../components/ui/Loading'; // Import Loading
+import { Loading } from '../components/ui/Loading';
 
 export const Login = () => {
-  const { isAuthenticated, loading, logout } = useAuth(); // Use loading state
+  const { isAuthenticated, loading, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 

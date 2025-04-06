@@ -1,6 +1,3 @@
-// --- Updated File: ./my-leaves-client/src/components/ui/Loading.tsx ---
-import React from 'react';
-
 export const Loading = ({ size = 'md' }: { size?: 'xs' | 'sm' | 'md' | 'lg' }) => (
     <div className="flex justify-center items-center p-4"> {/* Reduced padding */}
       {/* Use span with loading classes per daisyUI docs */}

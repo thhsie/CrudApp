@@ -1,4 +1,3 @@
-// --- Updated File: ./my-leaves-client/src/components/layout/Layout.tsx ---
 import { ReactNode } from 'react';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';

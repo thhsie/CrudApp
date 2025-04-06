@@ -1,4 +1,3 @@
-// --- Updated File: ./my-leaves-client/src/components/leaves/LeaveForm.tsx ---
 import React, { useState } from 'react';
 import { LeaveRequestData, LeaveType } from '../../types/leave';
 import { ErrorDisplay } from '../ui/ErrorDisplay'; // Using standard error display
