@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* You can add custom base styles here if needed */
+body {
+  /* Example: Add a default font if desired, but often handled by daisyUI themes */
+}
