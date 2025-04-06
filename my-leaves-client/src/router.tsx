@@ -68,7 +68,7 @@ export const router = createBrowserRouter([
         element: <Dashboard />,
       },
       {
-        path: 'leaves',
+        path: 'user/leaves',
         element: <LeaveManagement />,
       },
       {

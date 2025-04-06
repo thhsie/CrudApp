@@ -31,7 +31,7 @@ export const Sidebar = () => {
           </NavLink>
         </li>
         <li>
-          <NavLink to="/leaves" className={getNavLinkClass}>
+          <NavLink to="/user/leaves" className={getNavLinkClass}>
              {/* <FaCalendarAlt /> */}
             Leave Management
           </NavLink>
