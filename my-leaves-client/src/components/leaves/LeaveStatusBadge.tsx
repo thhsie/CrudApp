@@ -1,3 +1,5 @@
+// --- Updated File: ./my-leaves-client/src/components/leaves/LeaveStatusBadge.tsx ---
+import React from 'react';
 import { LeaveStatus } from '../../types/leave';
 
 interface LeaveStatusBadgeProps {
@@ -5,33 +7,34 @@ interface LeaveStatusBadgeProps {
 }
 
 export const LeaveStatusBadge = ({ status }: LeaveStatusBadgeProps) => {
-  const getBadgeClass = () => {
-    switch (status) {
-      case LeaveStatus.Approved:
-        return 'badge-success';
-      case LeaveStatus.Rejected:
-        return 'badge-error';
-      case LeaveStatus.Pending:
-      default:
-        return 'badge-warning';
-    }
-  };
+  let badgeClass = '';
+  let statusText = 'Unknown';
 
-  const getStatusText = () => {
-    switch (status) {
-      case LeaveStatus.Approved:
-        return 'Approved';
-      case LeaveStatus.Rejected:
-        return 'Rejected';
-      case LeaveStatus.Pending:
-      default:
-        return 'Pending';
-    }
-  };
+  switch (status) {
+    case LeaveStatus.Approved:
+      badgeClass = 'badge-success'; // Use daisyUI semantic color
+      statusText = 'Approved';
+      break;
+    case LeaveStatus.Rejected:
+      badgeClass = 'badge-error'; // Use daisyUI semantic color
+      statusText = 'Rejected';
+      break;
+    case LeaveStatus.Pending:
+      badgeClass = 'badge-warning'; // Use daisyUI semantic color
+      statusText = 'Pending';
+      break;
+    default:
+      badgeClass = 'badge-ghost'; // Fallback style
+      // Log unexpected status
+      console.warn(`Unknown leave status encountered: ${status}`);
+      break;
+  }
 
   return (
-    <div className={`badge ${getBadgeClass()}`}>
-      {getStatusText()}
+    // Use badge component with appropriate color modifier
+    // Add size modifier if needed e.g., badge-sm
+    <div className={`badge ${badgeClass} badge-md font-semibold`}>
+      {statusText}
     </div>
   );
-};
+};;

@@ -1,71 +1,131 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+// --- Updated File: ./my-leaves-client/src/hooks/useLeaves.ts ---
+import { useMutation, useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
 import { leaveService } from '../services/leaveService';
-import { Leave, LeaveRequest } from '../types/leave';
-import { useAuth } from '../contexts/AuthContext';
+import { Leave, LeaveRequestData } from '../types/leave';
+
+// Query keys factory
+const leavesKeys = {
+  all: ['leaves'] as const,
+  detail: (id: number | undefined) => [...leavesKeys.all, id] as const,
+};
 
 export const useLeaves = () => {
-  const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
 
-  // Fetch leaves based on user role
-  const { data: leaves = [], isLoading, error } = useQuery({
-    queryKey: ['leaves'],
-    queryFn: isAdmin ? leaveService.getAllLeaves : leaveService.getUserLeaves,
+  // --- Queries ---
+
+  // Fetch all leaves
+  const {
+    data: leaves = [],
+    isLoading: isLoadingLeaves,
+    error: errorLeaves,
+    refetch: refetchLeaves,
+  }: UseQueryResult<Leave[], Error> = useQuery({
+    queryKey: leavesKeys.all,
+    queryFn: leaveService.getAllLeaves,
   });
 
-  // Get a single leave
-  const useLeaveDetail = (id: number) => {
+  // Hook to get a single leave's details
+  const useLeaveDetail = (id: number | undefined) => {
     return useQuery({
-      queryKey: ['leaves', id],
-      queryFn: () => leaveService.getLeaveById(id),
-      enabled: !!id,
+      queryKey: leavesKeys.detail(id),
+      queryFn: () => {
+        if (!id) return Promise.resolve(null); // Return null or throw if id is needed
+        return leaveService.getLeaveById(id);
+      },
+      enabled: !!id, // Only run query if id is valid
     });
   };
 
-  // Create a new leave request
+  // --- Mutations ---
+
+  // Common invalidation logic
+  const invalidateLeavesQueries = (id?: number) => {
+    queryClient.invalidateQueries({ queryKey: leavesKeys.all });
+    if (id) {
+      queryClient.invalidateQueries({ queryKey: leavesKeys.detail(id) });
+    }
+  };
+
+  // Create Leave
   const createLeaveMutation = useMutation({
-    mutationFn: (newLeave: LeaveRequest) => leaveService.createLeave(newLeave),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leaves'] });
+    mutationFn: (newLeave: LeaveRequestData) => leaveService.createLeave(newLeave),
+    onSuccess: (createdLeave) => {
+      console.log('Leave created:', createdLeave);
+      invalidateLeavesQueries(); // Invalidate list
+       // Optionally pre-fill detail cache
+       queryClient.setQueryData(leavesKeys.detail(createdLeave.id), createdLeave);
     },
+    onError: (error) => {
+        console.error("Failed to create leave:", error);
+    }
   });
 
-  // Approve a leave request (admin only)
+  // Approve Leave
   const approveLeaveMutation = useMutation({
     mutationFn: (id: number) => leaveService.approveLeave(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leaves'] });
+    onSuccess: (_, id) => {
+      console.log('Leave approved:', id);
+      invalidateLeavesQueries(id); // Invalidate list and detail
     },
+    onError: (error, id) => {
+        console.error(`Failed to approve leave ${id}:`, error);
+    }
   });
 
-  // Reject a leave request (admin only)
+  // Reject Leave
   const rejectLeaveMutation = useMutation({
     mutationFn: (id: number) => leaveService.rejectLeave(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leaves'] });
+    onSuccess: (_, id) => {
+      console.log('Leave rejected:', id);
+      invalidateLeavesQueries(id);
     },
+    onError: (error, id) => {
+        console.error(`Failed to reject leave ${id}:`, error);
+    }
   });
 
-  // Delete a leave request
+  // Delete Leave
   const deleteLeaveMutation = useMutation({
     mutationFn: (id: number) => leaveService.deleteLeave(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leaves'] });
+    onSuccess: (_, id) => {
+      console.log('Leave deleted:', id);
+      invalidateLeavesQueries(); // Invalidate list
+      queryClient.removeQueries({ queryKey: leavesKeys.detail(id) }); // Remove detail from cache
     },
+     onError: (error, id) => {
+        console.error(`Failed to delete leave ${id}:`, error);
+    }
   });
 
+  // Return values
   return {
+    // Queries
     leaves,
-    isLoading,
-    error,
+    isLoadingLeaves,
+    errorLeaves,
+    refetchLeaves,
     useLeaveDetail,
+
+    // Mutations & Status
     createLeave: createLeaveMutation.mutate,
+    createLeaveAsync: createLeaveMutation.mutateAsync,
     isCreating: createLeaveMutation.isPending,
+    errorCreating: createLeaveMutation.error,
+
     approveLeave: approveLeaveMutation.mutate,
+    approveLeaveAsync: approveLeaveMutation.mutateAsync,
     isApproving: approveLeaveMutation.isPending,
+    errorApproving: approveLeaveMutation.error,
+
     rejectLeave: rejectLeaveMutation.mutate,
+    rejectLeaveAsync: rejectLeaveMutation.mutateAsync,
     isRejecting: rejectLeaveMutation.isPending,
+    errorRejecting: rejectLeaveMutation.error,
+
     deleteLeave: deleteLeaveMutation.mutate,
+    deleteLeaveAsync: deleteLeaveMutation.mutateAsync,
     isDeleting: deleteLeaveMutation.isPending,
+    errorDeleting: deleteLeaveMutation.error,
   };
 };

@@ -1,7 +1,8 @@
+// --- Updated File: ./my-leaves-client/vite.config.ts ---
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import path from 'path'; // Added import for path
+import path from 'path';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -9,20 +10,29 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
-  resolve: { // Added resolve config
+  resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
-  server: { // Added server proxy config
+  server: {
     proxy: {
-      '/api': {
-        target: 'http://localhost:5010', // Assuming your backend runs on 5000
+      // Proxy API requests (leaves, users etc.) to the BFF
+      '/leaves': {
+        target: 'https://localhost:7123', // Your BFF URL
         changeOrigin: true,
+        secure: false, // Disable SSL verification if using self-signed certs in dev
       },
-      '/auth': { // Added proxy for auth routes as well
-        target: 'http://localhost:5010',
+      '/users': {
+        target: 'https://localhost:7123', // Your BFF URL
         changeOrigin: true,
+        secure: false,
+      },
+      // Proxy auth requests to the BFF
+      '/auth': {
+        target: 'https://localhost:7123', // Your BFF URL
+        changeOrigin: true,
+        secure: false,
       },
     },
   },

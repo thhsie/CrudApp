@@ -1,27 +1,33 @@
+// --- Updated File: ./my-leaves-client/src/types/leave.ts ---
+// Matches the backend API enums and DTOs
+
+/** Matches the LeaveType enum in the backend API */
 export enum LeaveType {
-    Vacation = 0,
+    Annual = 0,
     Sick = 1,
-    Personal = 2,
-    Bereavement = 3,
-    Other = 4
+    Special = 2,
+    Unpaid = 3
   }
 
-  export enum LeaveStatus {
+/** Matches the LeaveStatus enum in the backend API */
+export enum LeaveStatus {
     Pending = 0,
     Approved = 1,
     Rejected = 2
   }
 
-  export interface LeaveRequest {
-    startDate: string;
-    endDate: string;
-    reason: string;
-    type: LeaveType;
+/** Data required to create/update a leave request via API */
+export interface LeaveRequestData {
+    startDate: string; // Should be YYYY-MM-DD format string
+    endDate: string;   // Should be YYYY-MM-DD format string
+    type: LeaveType;   // The numeric enum value
   }
 
-  export interface Leave extends LeaveRequest {
+/** Matches the LeaveItem DTO returned by the backend API */
+export interface Leave {
     id: number;
-    userId: string;
-    status: LeaveStatus;
-    createdAt: string;
-  }
+    type: LeaveType; // Numeric enum value
+    startDate: string; // Date string from API (e.g., ISO 8601)
+    endDate: string;   // Date string from API (e.g., ISO 8601)
+    status: LeaveStatus; // Numeric enum value
+}
