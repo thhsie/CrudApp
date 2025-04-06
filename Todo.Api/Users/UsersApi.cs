@@ -82,6 +82,19 @@ public static class UsersApi
             return TypedResults.ValidationProblem(result.Errors.ToDictionary(e => e.Code, e => new[] { e.Description }));
         });
 
+        group.MapPut("/leave-balances/{id}", async ([FromRoute] string id, LeaveBalancesUpdateRequest request, UserManager<TodoUser> userManager, CurrentUser currentUser) =>
+        {
+            if (!currentUser.IsAdmin) return Results.Unauthorized();
+
+            var user = await userManager.FindByIdAsync(id);
+            if (user == null) return Results.NotFound();
+
+            user.SetLeaveBalances(request.PaidLeavesBalance, request.SickLeavesBalance, request.SpecialLeavesBalance);
+            await userManager.UpdateAsync(user);
+
+            return Results.Ok();
+        }).RequireAuthorization(pb => pb.RequireCurrentUser());
+
         return group;
     }
 }

@@ -42,5 +42,6 @@ app.MapAuth();
 app.MapTodos();
 app.MapLeaves();
 app.MapRoles();
+app.MapLeaveBalances();
 
 app.Run();

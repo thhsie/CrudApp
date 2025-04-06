@@ -58,3 +58,11 @@ public class LeaveBalances
         return new LeaveBalances(AnnualLeavesBalance, SickLeavesBalance, SpecialLeavesBalance - amount);
     }
 }
+
+// We will use this DTO to assign balances from a PUT endpoint
+public class LeaveBalancesUpdateRequest
+{
+    public int PaidLeavesBalance { get; set; }
+    public int SickLeavesBalance { get; set; }
+    public int SpecialLeavesBalance { get; set; }
+}
