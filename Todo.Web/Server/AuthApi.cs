@@ -74,17 +74,17 @@ public static class AuthApi
 
                 // TODO: We should have the user pick a user name to complete the external login dance
                 // for now we'll prefer the email address
-                var name = (principal.FindFirstValue(ClaimTypes.Email) ?? principal.Identity?.Name)!;
+                var email = (principal.FindFirstValue(ClaimTypes.Email) ?? principal.Identity?.Name)!;
 
                 // Protect the user id so it for transport
                 var protector = dataProtectionProvider.CreateProtector(provider);
 
-                var token = await client.GetOrCreateUserAsync(provider, new() { Username = name, ProviderKey = protector.Protect(id) });
+                var token = await client.GetOrCreateUserAsync(provider, new() { Username = email, ProviderKey = protector.Protect(id), Email = email });
 
                 if (token is not null)
                 {
                     // Write the login cookie
-                    await SignIn(id, name, token, provider).ExecuteAsync(context);
+                    await SignIn(id, email, token, provider).ExecuteAsync(context);
                 }
             }
 

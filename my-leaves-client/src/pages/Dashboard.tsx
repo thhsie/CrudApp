@@ -110,10 +110,10 @@ export const Dashboard = () => {
             <h2 className="card-title mb-4">Quick Actions</h2>
             <div className="flex flex-col gap-3"> {/* Vertical actions */}
                 {/* Link to the page where the form is toggled */}
-                <Link to="/leaves" state={{ showForm: true }} className="btn btn-primary w-full">
+                <Link to="/user/leaves" state={{ showForm: true }} className="btn btn-primary w-full">
                 {/* Optional Icon */} Request New Leave
                 </Link>
-                <Link to="/leaves" className="btn btn-outline w-full">
+                <Link to="/user/leaves" className="btn btn-outline w-full">
                 Manage My Leaves
                 </Link>
                 {/* Add other relevant links */}

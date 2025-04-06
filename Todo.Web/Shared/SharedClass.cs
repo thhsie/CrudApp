@@ -26,6 +26,8 @@ public class ExternalUserInfo
 
     [Required]
     public string ProviderKey { get; set; } = default!;
+
+    public string? Email { get; set; }
 }
 
 public record AuthToken([property: JsonPropertyName("accessToken")] string Token);
