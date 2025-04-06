@@ -37,11 +37,11 @@ public static class UsersApi
             return result.Succeeded ? Results.Ok() : Results.ValidationProblem(result.Errors.ToDictionary(e => e.Code, e => new[] { e.Description }));
         }).RequireAuthorization(pb => pb.RequireCurrentUser());
 
-        group.MapGet("/roles", async ([FromQuery] string userId, UserManager<TodoUser> userManager, CurrentUser currentUser) =>
+        group.MapGet("/roles", async ([FromQuery] string email, UserManager<TodoUser> userManager, CurrentUser currentUser) =>
         {
             if (!currentUser.IsAdmin) return Results.Unauthorized();
 
-            var user = await userManager.FindByIdAsync(userId);
+            var user = await userManager.FindByEmailAsync(email);
             if (user == null) return Results.NotFound();
 
             var roles = await userManager.GetRolesAsync(user);

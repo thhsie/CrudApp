@@ -125,7 +125,8 @@ public static class AuthApi
             }
 
             // Return structure matching frontend User type (approximated)
-            return Results.Ok(new {
+            return Results.Ok(new
+            {
                 // Use the claims stored in the BFF cookie
                 Id = userId, // This might be external provider ID or email depending on login type
                 Email = name, // This is the ClaimTypes.Name stored during SignIn
