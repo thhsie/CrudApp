@@ -7,7 +7,7 @@ export const Navbar = () => {
 
   return (
     // Cleaner navbar: base-100 background, subtle border, sticky
-    <div className="navbar sticky top-0 z-30 bg-base-100 border-b border-base-300 shadow-sm">
+    <div className="navbar sticky top-0 z-30 bg-base-100/70 backdrop-blur-lg border-b border-base-300 shadow-sm">
       {/* Left Section */}
       <div className="navbar-start">
         {/* Drawer Toggle (Mobile) */}
