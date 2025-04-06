@@ -1,5 +1,6 @@
 // --- Updated File: ./my-leaves-client/src/services/api.ts ---
 import axios from 'axios';
+import { authService } from './authService';
 
 // Create an axios instance
 const api = axios.create({
@@ -20,13 +21,10 @@ api.interceptors.response.use(
       });
 
       if (error.response.status === 401) {
-        // Unauthorized - Redirect to login, avoid loop
-        if (window.location.pathname !== '/login') {
-          console.log('Interceptor: Unauthorized (401). Redirecting to login.');
-          // Clear potentially stale auth state before redirecting (e.g., in AuthContext or localStorage)
-           localStorage.removeItem('currentUser'); // Example clearing
-           window.location.href = '/login?sessionExpired=true';
-        }
+        // Unauthorized - Logout and redirect to login
+        authService.logout().then(() => {
+          window.location.href = '/login';
+        });
       } else if (error.response.status === 403) {
         console.warn('Interceptor: Forbidden (403). User lacks permissions.');
         // Optionally redirect or show a message

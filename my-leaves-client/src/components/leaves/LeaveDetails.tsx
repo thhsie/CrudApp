@@ -1,16 +1,22 @@
-// --- Updated File: ./my-leaves-client/src/components/leaves/LeaveDetails.tsx ---
-import React from 'react';
+// --- Updated File: ./my-leaves-client/src/components/leaves/LeaveCard.tsx ---
+import React, { useState } from 'react';
 import { Leave, LeaveStatus, LeaveType } from '../../types/leave';
-import { formatDate } from '../../utils/dateUtils'; // Assuming you have this utility
-import { LeaveStatusBadge } from './LeaveStatusBadge'; // Import badge
+import { LeaveStatusBadge } from './LeaveStatusBadge';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { formatDate } from '../../utils/dateUtils';
+import { useAuth } from '../../contexts/AuthContext';
 
-interface LeaveDetailsProps {
-  leave: Leave | null;
-  onClose: () => void;
-  modalId?: string; // Optional ID for programmatic control if needed
+interface LeaveCardProps {
+  leave: Leave;
+  onApprove?: (id: number) => void;
+  onReject?: (id: number) => void;
+  onDelete?: (id: number) => void;
+  isApproving?: boolean;
+  isRejecting?: boolean;
+  isDeleting?: boolean;
 }
 
-// Helper function to get text - move to utils if used elsewhere
+// Helper function to get text
 const getLeaveTypeText = (type: LeaveType): string => {
     switch (type) {
       case LeaveType.Annual: return 'Annual';
@@ -19,57 +25,135 @@ const getLeaveTypeText = (type: LeaveType): string => {
       case LeaveType.Unpaid: return 'Unpaid';
       default: return 'Unknown';
     }
+};
+
+export const LeaveCard = ({
+  leave,
+  onApprove,
+  onReject,
+  onDelete,
+  isApproving,
+  isRejecting,
+  isDeleting,
+}: LeaveCardProps) => {
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { isAdmin } = useAuth();
+
+  const isPending = leave.status === LeaveStatus.Pending;
+  // Allow delete if handler exists AND status is Pending
+  // (Admins can delete pending, users can delete their own pending)
+  const canDelete = isPending && onDelete;
+
+  // Check if *this specific card's* action is in progress
+  // Note: This assumes the boolean flags (isApproving etc.) passed down might eventually target specific IDs
+  // If they are global flags (e.g., "an approval is happening somewhere"), this needs adjustment.
+  // Assuming for now they relate to *any* action potentially locking the UI.
+  const isActionInProgress = isApproving || isRejecting || isDeleting;
+
+  const handleDeleteConfirm = () => {
+    if (isActionInProgress) return;
+    onDelete?.(leave.id);
+    setIsDeleteDialogOpen(false);
   };
 
-export const LeaveDetails = ({ leave, onClose, modalId = "leave_details_modal" }: LeaveDetailsProps) => {
-  // This component now assumes the modal is controlled externally (e.g., by setting a state variable holding the 'leave' to display)
-  // It renders the modal structure, but doesn't manage its open/closed state directly via internal state.
+  const handleApprove = () => {
+    if (isActionInProgress) return;
+    onApprove?.(leave.id);
+  }
 
-  if (!leave) return null; // Don't render anything if no leave is provided
+  const handleReject = () => {
+     if (isActionInProgress) return;
+    onReject?.(leave.id);
+  }
+
+  const handleOpenDeleteDialog = () => {
+     if (isActionInProgress) return;
+    setIsDeleteDialogOpen(true);
+  }
+
+  // Add conditional classes for loading state appearance
+  const cardClasses = `card card-bordered bg-base-100 shadow-sm mb-4 transition-opacity duration-300 ${isActionInProgress ? 'opacity-70 pointer-events-none' : ''}`;
 
   return (
-    <dialog id={modalId} className="modal modal-open"> {/* Use modal-open driven by parent state */}
-      <div className="modal-box w-11/12 max-w-lg"> {/* Control width */}
-        <h3 className="font-bold text-xl mb-4">Leave Request Details</h3>
+    <> {/* Use Fragment */}
+      <div className={cardClasses}>
+        <div className="card-body p-4 md:p-5"> {/* Consistent padding */}
+          {/* Header: Type and Status */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
+            <h2 className="card-title text-lg font-semibold mb-1 sm:mb-0">
+              {getLeaveTypeText(leave.type)} Leave
+              <span className="text-sm font-normal text-base-content/60 ml-2">#{leave.id}</span> {/* Show ID subtly */}
+            </h2>
+            <LeaveStatusBadge status={leave.status} />
+          </div>
 
-        {/* Using a definition list for better semantics */}
-        <dl className="space-y-3">
-            <div className="flex justify-between">
-                <dt className="font-medium text-base-content/70">Request ID</dt>
-                <dd>{leave.id}</dd>
+          {/* Dates Section */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 my-2 text-sm"> {/* Reduced gap and text size */}
+            <div>
+              <p className="text-xs uppercase tracking-wider text-base-content/60 mb-0.5">Start Date</p>
+              <p className="font-medium">{formatDate(leave.startDate)}</p>
             </div>
-             <div className="flex justify-between">
-                <dt className="font-medium text-base-content/70">Type</dt>
-                <dd>{getLeaveTypeText(leave.type)}</dd>
+            <div>
+               <p className="text-xs uppercase tracking-wider text-base-content/60 mb-0.5">End Date</p>
+              <p className="font-medium">{formatDate(leave.endDate)}</p>
             </div>
-            <div className="flex justify-between">
-                <dt className="font-medium text-base-content/70">Status</dt>
-                <dd><LeaveStatusBadge status={leave.status} /></dd>
-            </div>
-            <div className="flex justify-between">
-                <dt className="font-medium text-base-content/70">Start Date</dt>
-                <dd>{formatDate(leave.startDate)}</dd>
-            </div>
-             <div className="flex justify-between">
-                <dt className="font-medium text-base-content/70">End Date</dt>
-                <dd>{formatDate(leave.endDate)}</dd>
-            </div>
-        </dl>
+          </div>
 
+          {/* Actions Area (only shown if actions exist) */}
+          {(isAdmin && isPending && onApprove && onReject) || canDelete ? (
+            <div className="card-actions justify-end items-center mt-3 pt-3 border-t border-base-200/50 space-x-2"> {/* Lighter border */}
+              {/* Admin Actions */}
+              {isAdmin && isPending && onApprove && onReject && (
+                <>
+                  <button
+                    className={`btn btn-success btn-sm ${isApproving ? 'btn-disabled loading' : ''}`} // Add loading class directly
+                    onClick={handleApprove}
+                    disabled={isActionInProgress}
+                    aria-label={`Approve leave request ${leave.id}`}
+                  >
+                     {isApproving ? <span className="loading loading-spinner loading-xs"></span> : 'Approve'}
+                  </button>
+                  <button
+                    className={`btn btn-warning btn-sm ${isRejecting ? 'btn-disabled loading' : ''}`} // Changed reject to warning visually
+                    onClick={handleReject}
+                    disabled={isActionInProgress}
+                     aria-label={`Reject leave request ${leave.id}`}
+                  >
+                    {isRejecting ? <span className="loading loading-spinner loading-xs"></span> : 'Reject'}
+                  </button>
+                </>
+              )}
 
-        {/* Close button in modal action */}
-        <div className="modal-action mt-6">
-          {/* Use button type="button" or form method="dialog" */}
-           <form method="dialog" className="w-full"> {/* Form needed for modal-backdrop click */}
-               <button className="btn btn-outline w-full" type="submit" onClick={onClose}>Close</button>
-           </form>
-          {/* <button className="btn btn-primary" onClick={onClose}>Close</button> */}
+              {/* Delete Action */}
+              {canDelete && (
+                <button
+                  className={`btn btn-ghost btn-sm text-error ${isDeleting ? 'btn-disabled loading' : ''}`}
+                  onClick={handleOpenDeleteDialog}
+                  disabled={isActionInProgress}
+                   aria-label={`Delete leave request ${leave.id}`}
+                >
+                  {isDeleting ? <span className="loading loading-spinner loading-xs"></span> : 'Delete'}
+                </button>
+              )}
+            </div>
+          ) : null } {/* Render null if no actions */}
         </div>
       </div>
-      {/* Click outside to close */}
-      <form method="dialog" className="modal-backdrop">
-        <button onClick={onClose}>close</button>
-      </form>
-    </dialog>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Confirm Deletion"
+        confirmText="Delete"
+        confirmButtonClass="btn-error" // Keep error style for delete
+      >
+        <p>Are you sure you want to delete this leave request (#{leave.id})?</p>
+        <p className="text-sm text-base-content/70 mt-1">Type: {getLeaveTypeText(leave.type)}</p>
+        <p className="text-sm text-base-content/70">Dates: {formatDate(leave.startDate)} to {formatDate(leave.endDate)}</p>
+        <p className="text-sm text-error font-semibold mt-3">This action cannot be undone.</p> {/* Use error color */}
+      </ConfirmDialog>
+    </>
   );
 };

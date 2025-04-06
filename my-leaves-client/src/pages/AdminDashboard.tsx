@@ -4,8 +4,6 @@ import React from 'react';
 import { LeaveList } from '../components/leaves/LeaveList';
 import { useLeaves } from '../hooks/useLeaves';
 import { LeaveStatus } from '../types/leave';
-import { Loading } from '../components/ui/Loading';
-import { ErrorDisplay } from '../components/ui/ErrorDisplay';
 
 export const AdminDashboard = () => {
   const {
@@ -20,56 +18,59 @@ export const AdminDashboard = () => {
     isDeleting,
   } = useLeaves();
 
-  // Calculate counts safely
-  const pendingCount = isLoadingLeaves ? 0 : leaves.filter(leave => leave.status === LeaveStatus.Pending).length;
-  const approvedCount = isLoadingLeaves ? 0 : leaves.filter(leave => leave.status === LeaveStatus.Approved).length;
-  const rejectedCount = isLoadingLeaves ? 0 : leaves.filter(leave => leave.status === LeaveStatus.Rejected).length;
+ // Calculate counts safely
+  const counts = React.useMemo(() => {
+      if (isLoadingLeaves || !leaves) return { pending: 0, approved: 0, rejected: 0, total: 0 };
+      return {
+          total: leaves.length,
+          pending: leaves.filter(leave => leave.status === LeaveStatus.Pending).length,
+          approved: leaves.filter(leave => leave.status === LeaveStatus.Approved).length,
+          rejected: leaves.filter(leave => leave.status === LeaveStatus.Rejected).length,
+      };
+  }, [leaves, isLoadingLeaves]);
 
   return (
-    <>
-      <h1 className="text-2xl md:text-3xl font-bold mb-6">Admin Dashboard - Manage Leaves</h1>
+     <div className="space-y-6 md:space-y-8"> {/* Consistent spacing */}
+      <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard - Manage Leaves</h1>
 
       {/* Stats Section */}
-       <div className="stats stats-vertical lg:stats-horizontal shadow mb-6 w-full bg-base-100">
-        <div className="stat">
-          <div className="stat-title">Total Requests</div>
+       <div className="stats stats-vertical lg:stats-horizontal shadow-md w-full bg-base-100 border border-base-300/50 rounded-lg overflow-hidden">
+         <div className="stat">
+          <div className="stat-title text-base-content/70">Total Requests</div>
           <div className={`stat-value ${isLoadingLeaves ? 'opacity-50' : ''}`}>
-            {isLoadingLeaves ? <span className="loading loading-dots loading-xs"></span> : leaves.length}
+            {isLoadingLeaves ? <span className="loading loading-dots loading-xs"></span> : counts.total}
             </div>
         </div>
         <div className="stat">
-          <div className="stat-title">Pending Approval</div>
+          <div className="stat-title text-base-content/70">Pending Approval</div>
           <div className={`stat-value ${isLoadingLeaves ? 'opacity-50' : 'text-warning'}`}>
-             {isLoadingLeaves ? <span className="loading loading-dots loading-xs"></span> : pendingCount}
+             {isLoadingLeaves ? <span className="loading loading-dots loading-xs"></span> : counts.pending}
              </div>
+             <div className="stat-desc text-xs text-warning">{counts.pending > 0 ? `${counts.pending} require action` : 'All caught up!'}</div>
         </div>
         <div className="stat">
-          <div className="stat-title">Approved</div>
+          <div className="stat-title text-base-content/70">Approved</div>
           <div className={`stat-value ${isLoadingLeaves ? 'opacity-50' : 'text-success'}`}>
-             {isLoadingLeaves ? <span className="loading loading-dots loading-xs"></span> : approvedCount}
+             {isLoadingLeaves ? <span className="loading loading-dots loading-xs"></span> : counts.approved}
              </div>
         </div>
          <div className="stat">
-          <div className="stat-title">Rejected</div>
+          <div className="stat-title text-base-content/70">Rejected</div>
           <div className={`stat-value ${isLoadingLeaves ? 'opacity-50' : 'text-error'}`}>
-             {isLoadingLeaves ? <span className="loading loading-dots loading-xs"></span> : rejectedCount}
+             {isLoadingLeaves ? <span className="loading loading-dots loading-xs"></span> : counts.rejected}
              </div>
         </div>
       </div>
 
       {/* All Leaves List - Admin View */}
-      <div className="card bg-base-100 shadow-xl border border-base-300">
-        <div className="card-body">
-          <h2 className="card-title mb-4">All Leave Requests</h2>
-          {isLoadingLeaves ? (
-            <Loading />
-          ) : errorLeaves ? (
-            <ErrorDisplay message={errorLeaves.message || 'Failed to load leave requests.'} />
-          ) : (
-            <LeaveList
-                leaves={leaves} // Pass all leaves
-                isLoading={false}
-                error={null}
+      <div className="card bg-base-100 shadow-lg border border-base-300/50">
+        <div className="card-body p-5 md:p-6">
+          <h2 className="card-title mb-4 text-lg">All Leave Requests</h2>
+           {/* LeaveList component handles loading/error/empty states internally now */}
+           <LeaveList
+                leaves={leaves ?? []} // Pass all leaves, ensure array
+                isLoading={isLoadingLeaves}
+                error={errorLeaves}
                 onApprove={approveLeave} // Pass admin actions
                 onReject={rejectLeave}
                 onDelete={deleteLeave}
@@ -77,13 +78,8 @@ export const AdminDashboard = () => {
                 isRejecting={isRejecting}
                 isDeleting={isDeleting}
             />
-           )}
-           {/* Message if no leaves exist */}
-          {!isLoadingLeaves && !errorLeaves && leaves.length === 0 && (
-             <p className="text-center py-4 text-base-content/70">No leave requests found in the system.</p>
-          )}
         </div>
       </div>
-    </>
+    </div>
   );
 };

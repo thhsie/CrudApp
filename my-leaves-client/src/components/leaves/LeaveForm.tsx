@@ -1,6 +1,7 @@
 // --- Updated File: ./my-leaves-client/src/components/leaves/LeaveForm.tsx ---
 import React, { useState } from 'react';
 import { LeaveRequestData, LeaveType } from '../../types/leave';
+import { ErrorDisplay } from '../ui/ErrorDisplay'; // Using standard error display
 
 interface LeaveFormProps {
   onSubmit: (leave: LeaveRequestData) => void;
@@ -48,12 +49,7 @@ export const LeaveForm = ({ onSubmit, isSubmitting }: LeaveFormProps) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Validation Error Display */}
-      {error && (
-         <div role="alert" className="alert alert-error">
-            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <span>{error}</span>
-        </div>
-      )}
+      {error && <ErrorDisplay message={error} />}
 
       {/* Leave Type Select */}
       <label className="form-control w-full">
@@ -64,9 +60,10 @@ export const LeaveForm = ({ onSubmit, isSubmitting }: LeaveFormProps) => {
           name="type"
           value={leaveRequest.type}
           onChange={handleChange}
-          className="select select-bordered w-full"
+          className="select select-bordered w-full" // Standard bordered select
           required
           aria-label="Select Leave Type" // Accessibility
+          disabled={isSubmitting} // Disable while submitting
         >
           {/* Map enum values to options */}
           <option value={LeaveType.Annual}>Annual Leave</option>
@@ -76,8 +73,8 @@ export const LeaveForm = ({ onSubmit, isSubmitting }: LeaveFormProps) => {
         </select>
       </label>
 
-      {/* Date Inputs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Date Inputs in a responsive grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Start Date */}
         <label className="form-control w-full">
           <div className="label">
@@ -88,10 +85,11 @@ export const LeaveForm = ({ onSubmit, isSubmitting }: LeaveFormProps) => {
             name="startDate"
             value={leaveRequest.startDate}
             onChange={handleChange}
-            className="input input-bordered w-full" // Use input class
+            className="input input-bordered w-full" // Standard bordered input
             required
             min={today} // Prevent selecting past dates
             aria-label="Leave Start Date" // Accessibility
+            disabled={isSubmitting} // Disable while submitting
           />
         </label>
 
@@ -105,25 +103,26 @@ export const LeaveForm = ({ onSubmit, isSubmitting }: LeaveFormProps) => {
             name="endDate"
             value={leaveRequest.endDate}
             onChange={handleChange}
-            className="input input-bordered w-full" // Use input class
+            className="input input-bordered w-full"
             required
             min={leaveRequest.startDate || today} // Ensure end date >= start date
             aria-label="Leave End Date" // Accessibility
+            disabled={isSubmitting} // Disable while submitting
           />
         </label>
       </div>
 
       {/* Submit Button */}
-      <div className="form-control pt-4"> {/* Add padding top */}
+      <div className="form-control pt-4 flex items-end"> {/* Align button right */}
         <button
           type="submit"
-          className={`btn btn-primary w-full md:w-auto ${isSubmitting ? 'btn-disabled' : ''}`} // Adjust width, use btn-disabled
+          className={`btn btn-primary ${isSubmitting ? 'btn-disabled' : ''}`} // Keep width auto, use btn-disabled
           disabled={isSubmitting}
         >
-          {isSubmitting && <span className="loading loading-spinner loading-xs mr-2"></span>} {/* Add spinner */}
+          {isSubmitting && <span className="loading loading-spinner loading-sm mr-2"></span>} {/* Use sm spinner */}
           {isSubmitting ? 'Submitting...' : 'Submit Request'}
         </button>
       </div>
     </form>
   );
-};;
+};

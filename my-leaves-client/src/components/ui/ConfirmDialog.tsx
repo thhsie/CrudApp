@@ -9,7 +9,8 @@ interface ConfirmDialogProps {
   children: ReactNode;
   confirmText?: string;
   cancelText?: string;
-  confirmButtonClass?: string;
+  confirmButtonClass?: string; // e.g., btn-error, btn-warning
+  isLoading?: boolean; // Add loading state for confirm button
 }
 
 export const ConfirmDialog = ({
@@ -21,71 +22,77 @@ export const ConfirmDialog = ({
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   confirmButtonClass = 'btn-primary', // Default confirm button style
+  isLoading = false, // Default loading state
 }: ConfirmDialogProps) => {
   const modalRef = useRef<HTMLDialogElement>(null);
 
-  // Use useEffect to control the dialog's open state via its methods
+  // Control dialog visibility via props
   useEffect(() => {
     const modal = modalRef.current;
     if (modal) {
-      if (isOpen) {
-        modal.showModal(); // Use daisyUI/HTML recommended method
-      } else {
-        // Check if modal is open before trying to close
-        // This prevents errors if it's already closed programmatically
-        if (modal.hasAttribute('open')) {
-             modal.close();
-        }
+      if (isOpen && !modal.open) {
+        modal.showModal();
+      } else if (!isOpen && modal.open) {
+        modal.close();
       }
     }
   }, [isOpen]);
 
-  // Handle closing via the dialog's native close event (e.g., ESC key)
+  // Handle closing via ESC key or backdrop click (if using form method="dialog")
   useEffect(() => {
     const modal = modalRef.current;
     const handleDialogClose = () => {
-      if (isOpen) { // Only call onClose if the dialog was supposed to be open
+      if (isOpen) { // Only call onClose if the dialog was programmatically open
         onClose();
       }
     };
     modal?.addEventListener('close', handleDialogClose);
-    return () => {
-      modal?.removeEventListener('close', handleDialogClose);
-    };
+    return () => modal?.removeEventListener('close', handleDialogClose);
   }, [onClose, isOpen]);
 
 
-  // Prevent form submission from closing dialog prematurely if needed
-   const handleConfirmClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-     e.preventDefault(); // Prevent default form submission behavior if inside a form
-     onConfirm();
+  const handleConfirmClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+     e.preventDefault();
+     if (!isLoading) { // Prevent action if already loading
+         onConfirm();
+     }
    };
 
    const handleCancelClick = (e: React.MouseEvent<HTMLButtonElement>) => {
      e.preventDefault();
-     onClose(); // Trigger the close handler
+     onClose();
    };
 
   return (
-    // Use the dialog element directly
-    <dialog ref={modalRef} id="confirm_modal" className="modal">
+    <dialog ref={modalRef} id="confirm_modal" className="modal modal-bottom sm:modal-middle"> {/* Responsive position */}
       <div className="modal-box">
         <h3 className="font-bold text-lg">{title}</h3>
-        <div className="py-4">{children}</div>
+        <div className="py-4 text-base-content/90">{children}</div> {/* Slightly less prominent text */}
         <div className="modal-action">
-          {/* Use button type="button" to prevent accidental form submission */}
-          <button type="button" className="btn" onClick={handleCancelClick}>
+          {/* Cancel Button */}
+          <button
+            type="button"
+            className="btn btn-ghost" // Use ghost for cancel
+            onClick={handleCancelClick}
+            disabled={isLoading} // Disable cancel while loading confirm
+          >
             {cancelText}
           </button>
-          <button type="button" className={`btn ${confirmButtonClass}`} onClick={handleConfirmClick}>
-            {confirmText}
+          {/* Confirm Button */}
+          <button
+            type="button"
+            className={`btn ${confirmButtonClass} ${isLoading ? 'btn-disabled loading' : ''}`} // Combined loading/disabled
+            onClick={handleConfirmClick}
+            disabled={isLoading}
+          >
+            {isLoading ? <span className="loading loading-spinner loading-xs"></span> : confirmText}
           </button>
         </div>
       </div>
        {/* Optional: Click outside to close */}
        <form method="dialog" className="modal-backdrop">
-         <button type="button" onClick={onClose}>close</button>
+         <button type="button" onClick={onClose} disabled={isLoading}>close</button> {/* Disable backdrop click when loading */}
        </form>
     </dialog>
   );
-};;
+};

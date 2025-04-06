@@ -20,8 +20,8 @@ interface LeaveListProps {
 
 export const LeaveList = ({
   leaves,
-  isLoading,
-  error,
+  isLoading, // Note: Parent component handles overall loading/error display now
+  error,     // This component primarily focuses on filtering and mapping
   onApprove,
   onReject,
   onDelete,
@@ -36,65 +36,72 @@ export const LeaveList = ({
     ? leaves
     : leaves.filter(leave => leave.status === filter);
 
-  // Determine counts for tabs
-  const counts = {
+  // Calculate counts for tabs
+  const counts = React.useMemo(() => ({ // Memoize counts calculation
       all: leaves.length,
       [LeaveStatus.Pending]: leaves.filter(l => l.status === LeaveStatus.Pending).length,
       [LeaveStatus.Approved]: leaves.filter(l => l.status === LeaveStatus.Approved).length,
       [LeaveStatus.Rejected]: leaves.filter(l => l.status === LeaveStatus.Rejected).length,
-  }
+  }), [leaves]);
 
-  // Loading and Error States are handled by the parent component now
-
-  if (!isLoading && !error && !leaves?.length) {
-      return <p className="text-center py-8 text-base-content/70">No leave requests found.</p>;
-  }
+  // Don't show tabs if there are no leaves at all and not loading
+  const showTabs = leaves.length > 0 && !isLoading;
 
   return (
     <div>
-      {/* Filter Tabs - Using daisyUI 'tabs' component */}
-      <div role="tablist" className="tabs tabs-lifted mb-4"> {/* Use tabs component */}
-        <button
-          role="tab"
-          className={`tab ${filter === 'all' ? 'tab-active' : ''}`}
-          onClick={() => setFilter('all')}
-          aria-selected={filter === 'all'} // Accessibility
-        >
-          All ({counts.all})
-        </button>
-        <button
-          role="tab"
-          className={`tab ${filter === LeaveStatus.Pending ? 'tab-active [--tab-bg:oklch(var(--wa))]' : ''}`} // Use warning color for pending bg
-          onClick={() => setFilter(LeaveStatus.Pending)}
-           aria-selected={filter === LeaveStatus.Pending}
-        >
-          Pending ({counts[LeaveStatus.Pending]})
-        </button>
-        <button
-          role="tab"
-          className={`tab ${filter === LeaveStatus.Approved ? 'tab-active [--tab-bg:oklch(var(--su))]' : ''}`} // Use success color
-          onClick={() => setFilter(LeaveStatus.Approved)}
-           aria-selected={filter === LeaveStatus.Approved}
-        >
-          Approved ({counts[LeaveStatus.Approved]})
-        </button>
-        <button
-          role="tab"
-          className={`tab ${filter === LeaveStatus.Rejected ? 'tab-active [--tab-bg:oklch(var(--er))]' : ''}`} // Use error color
-          onClick={() => setFilter(LeaveStatus.Rejected)}
-           aria-selected={filter === LeaveStatus.Rejected}
-        >
-          Rejected ({counts[LeaveStatus.Rejected]})
-        </button>
-         {/* Add empty tab to fill space if needed */}
-         <span role="tab" className="tab grow [--tab-border-color:transparent]"></span>
-      </div>
+      {/* Filter Tabs - Use tabs-boxed for a cleaner look */}
+      {showTabs && (
+          <div role="tablist" className="tabs tabs-boxed mb-6 bg-base-200/50 p-1">
+            <button
+              role="tab"
+              className={`tab ${filter === 'all' ? 'tab-active' : ''} flex-1`} // Use flex-1 for equal width
+              onClick={() => setFilter('all')}
+              aria-selected={filter === 'all'}
+            >
+              All <span className="ml-1 opacity-70">({counts.all})</span>
+            </button>
+            <button
+              role="tab"
+              className={`tab ${filter === LeaveStatus.Pending ? 'tab-active !bg-warning !text-warning-content' : ''} flex-1`} // Use ! to ensure override, specify text color
+              onClick={() => setFilter(LeaveStatus.Pending)}
+              aria-selected={filter === LeaveStatus.Pending}
+            >
+              Pending <span className="ml-1 opacity-70">({counts[LeaveStatus.Pending]})</span>
+            </button>
+            <button
+              role="tab"
+              className={`tab ${filter === LeaveStatus.Approved ? 'tab-active !bg-success !text-success-content' : ''} flex-1`}
+              onClick={() => setFilter(LeaveStatus.Approved)}
+              aria-selected={filter === LeaveStatus.Approved}
+            >
+              Approved <span className="ml-1 opacity-70">({counts[LeaveStatus.Approved]})</span>
+            </button>
+            <button
+              role="tab"
+              className={`tab ${filter === LeaveStatus.Rejected ? 'tab-active !bg-error !text-error-content' : ''} flex-1`}
+              onClick={() => setFilter(LeaveStatus.Rejected)}
+              aria-selected={filter === LeaveStatus.Rejected}
+            >
+              Rejected <span className="ml-1 opacity-70">({counts[LeaveStatus.Rejected]})</span>
+            </button>
+          </div>
+      )}
 
       {/* Leave Cards List */}
       <div className="space-y-4">
-        {filteredLeaves.length === 0 ? (
-          <p className="text-center py-4 text-base-content/70">No leaves match the selected filter.</p>
+        {/* Handle loading/error states passed from parent */}
+        {isLoading ? (
+            <Loading />
+        ) : error ? (
+            <ErrorDisplay message={error.message || "Failed to load leaves."} />
+        ) : leaves.length === 0 ? (
+            // Specific message if no leaves exist at all
+             <p className="text-center py-8 text-base-content/70 italic">No leave requests found.</p>
+        ) : filteredLeaves.length === 0 ? (
+             // Specific message if filters yield no results
+            <p className="text-center py-8 text-base-content/70 italic">No leave requests match the selected filter.</p>
         ) : (
+          // Render filtered leaves
           filteredLeaves.map((leave) => (
             <LeaveCard
               key={leave.id}
