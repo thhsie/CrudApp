@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 public class LeaveBalances
 {
     public LeaveBalances(int paidLeavesBalance, int sickLeavesBalance, int specialLeavesBalance)
@@ -20,12 +22,8 @@ public class LeaveBalances
 
     public LeaveBalances DecreaseAnnualLeaves(int amount)
     {
-        if (AnnualLeavesBalance - amount < 0)
-        {
-            throw new InvalidOperationException("Cannot decrease AnnualLeavesBalance below zero.");
-        }
-
-        return new LeaveBalances(AnnualLeavesBalance - amount, SickLeavesBalance, SpecialLeavesBalance);
+        int newBalance = Math.Max(0, AnnualLeavesBalance - amount);
+        return new LeaveBalances(newBalance, SickLeavesBalance, SpecialLeavesBalance);
     }
 
     public LeaveBalances IncreaseSickLeaves(int amount)
@@ -35,12 +33,8 @@ public class LeaveBalances
 
     public LeaveBalances DecreaseSickLeaves(int amount)
     {
-        if (SickLeavesBalance - amount < 0)
-        {
-            throw new InvalidOperationException("Cannot decrease SickLeavesBalance below zero.");
-        }
-
-        return new LeaveBalances(AnnualLeavesBalance, SickLeavesBalance - amount, SpecialLeavesBalance);
+        int newBalance = Math.Max(0, SickLeavesBalance - amount);
+        return new LeaveBalances(AnnualLeavesBalance, newBalance, SpecialLeavesBalance);
     }
 
     public LeaveBalances IncreaseSpecialLeaves(int amount)
@@ -50,19 +44,20 @@ public class LeaveBalances
 
     public LeaveBalances DecreaseSpecialLeaves(int amount)
     {
-        if (SpecialLeavesBalance - amount < 0)
-        {
-            throw new InvalidOperationException("Cannot decrease SpecialLeavesBalance below zero.");
-        }
-
-        return new LeaveBalances(AnnualLeavesBalance, SickLeavesBalance, SpecialLeavesBalance - amount);
+        int newBalance = Math.Max(0, SpecialLeavesBalance - amount);
+        return new LeaveBalances(AnnualLeavesBalance, SickLeavesBalance, newBalance);
     }
 }
 
 // We will use this DTO to assign balances from a PUT endpoint
 public class LeaveBalancesUpdateRequest
 {
+    [Range(0, int.MaxValue, ErrorMessage = $"The balance cannot be negative")]
     public int PaidLeavesBalance { get; set; }
+
+    [Range(0, int.MaxValue, ErrorMessage = $"The balance cannot be negative")]
     public int SickLeavesBalance { get; set; }
+
+    [Range(0, int.MaxValue, ErrorMessage = $"The balance cannot be negative")]
     public int SpecialLeavesBalance { get; set; }
 }
