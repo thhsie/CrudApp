@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using TodoApi.Shared;
 
 namespace TodoApi;
 
@@ -19,7 +20,40 @@ internal static class LeaveApi
         group.RequirePerUserRateLimit();
 
         // Validate the parameters
-        group.WithParameterValidation(typeof(LeaveItem));
+        group.WithParameterValidation(typeof(LeaveItem), typeof(PaginationRequest));
+
+        group.MapGet("/all", async Task<Results<Ok<PaginatedResponse<LeaveItem>>, NotFound>> (TodoDbContext db, PaginationRequest pagination, CurrentUser user) =>
+        {
+            if (!user.IsAdmin)
+            {
+                return TypedResults.NotFound();
+            }
+
+            var totalCount = await db.Leaves.CountAsync();
+            var pendingCount = await db.Leaves.CountAsync(l => l.Status == LeaveStatus.Pending);
+            var approvedCount = await db.Leaves.CountAsync(l => l.Status == LeaveStatus.Approved);
+            var rejectedCount = await db.Leaves.CountAsync(l => l.Status == LeaveStatus.Rejected);
+            var leaves = await db.Leaves
+                .OrderBy(l => l.Id)
+                .Skip((pagination.PageNumber - 1) * pagination.PageSize)
+                .Take(pagination.PageSize)
+                .Select(l => l.AsLeaveItem())
+                .AsNoTracking()
+                .ToListAsync();
+
+            var response = new PaginatedResponse<LeaveItem>
+            {
+                Data = leaves,
+                TotalCount = totalCount,
+                PendingCount = pendingCount,
+                ApprovedCount = approvedCount,
+                RejectedCount = rejectedCount,
+                PageNumber = pagination.PageNumber,
+                PageSize = pagination.PageSize
+            };
+
+            return TypedResults.Ok(response);
+        });
 
         group.MapGet("/", async (TodoDbContext db, CurrentUser owner) =>
         {
@@ -89,9 +123,9 @@ internal static class LeaveApi
             }
 
             var leave = await db.Leaves.FindAsync(id);
-            if (leave == null)
+            if (leave == null || leave.Status == LeaveStatus.Approved)
             {
-                return TypedResults.NotFound();
+                return TypedResults.BadRequest();
             }
 
             var user = await db.Users.FindAsync(leave.OwnerId);
@@ -112,9 +146,9 @@ internal static class LeaveApi
             }
 
             var leave = await db.Leaves.FindAsync(id);
-            if (leave == null)
+            if (leave == null || leave.Status == LeaveStatus.Rejected)
             {
-                return TypedResults.NotFound();
+                return TypedResults.BadRequest();
             }
 
             var user = await db.Users.FindAsync(leave.OwnerId);
