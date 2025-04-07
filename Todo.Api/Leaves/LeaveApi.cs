@@ -22,7 +22,7 @@ internal static class LeaveApi
         // Validate the parameters
         group.WithParameterValidation(typeof(LeaveItem), typeof(PaginationRequest));
 
-        group.MapGet("/all", async Task<Results<Ok<PaginatedResponse<LeaveItem>>, NotFound>> (TodoDbContext db, PaginationRequest pagination, CurrentUser user) =>
+        group.MapGet("/all", async Task<Results<Ok<PaginatedResponse<LeaveItem>>, NotFound>> (TodoDbContext db, [AsParameters] PaginationRequest pagination, CurrentUser user) =>
         {
             if (!user.IsAdmin)
             {
@@ -34,7 +34,7 @@ internal static class LeaveApi
             var approvedCount = await db.Leaves.CountAsync(l => l.Status == LeaveStatus.Approved);
             var rejectedCount = await db.Leaves.CountAsync(l => l.Status == LeaveStatus.Rejected);
             var leaves = await db.Leaves
-                .OrderBy(l => l.Id)
+                .OrderByDescending(l => l.StartDate)
                 .Skip((pagination.PageNumber - 1) * pagination.PageSize)
                 .Take(pagination.PageSize)
                 .Select(l => l.AsLeaveItem())
