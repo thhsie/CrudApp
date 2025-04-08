@@ -11,15 +11,8 @@ internal static class LeaveApi
         var group = routes.MapGroup("/leaves");
 
         group.WithTags("Leaves");
-
-        // Add security requirements, all incoming requests to this API *must*
-        // be authenticated with a valid user.
         group.RequireAuthorization(pb => pb.RequireCurrentUser());
-
-        // Rate limit all of the APIs
         group.RequirePerUserRateLimit();
-
-        // Validate the parameters
         group.WithParameterValidation(typeof(LeaveItem), typeof(PaginationRequest));
 
         group.MapGet("/all", async Task<Results<Ok<PaginatedResponse<LeaveItem>>, NotFound>> (TodoDbContext db, [AsParameters] PaginationRequest pagination, CurrentUser user) =>
@@ -29,16 +22,19 @@ internal static class LeaveApi
                 return TypedResults.NotFound();
             }
 
-            var totalCount = await db.Leaves.CountAsync();
-            var pendingCount = await db.Leaves.CountAsync(l => l.Status == LeaveStatus.Pending);
-            var approvedCount = await db.Leaves.CountAsync(l => l.Status == LeaveStatus.Approved);
-            var rejectedCount = await db.Leaves.CountAsync(l => l.Status == LeaveStatus.Rejected);
-            var leaves = await db.Leaves
-                .OrderByDescending(l => l.StartDate)
+            var query = db.Leaves.AsNoTracking(); // Start query
+
+            var totalCount = await query.CountAsync();
+            var pendingCount = await query.CountAsync(l => l.Status == LeaveStatus.Pending);
+            var approvedCount = await query.CountAsync(l => l.Status == LeaveStatus.Approved);
+            var rejectedCount = await query.CountAsync(l => l.Status == LeaveStatus.Rejected);
+
+            var leaves = await query
+                .OrderBy(l => l.Status == LeaveStatus.Pending ? 0 : 1)
+                .ThenBy(l => l.StartDate)
                 .Skip((pagination.PageNumber - 1) * pagination.PageSize)
                 .Take(pagination.PageSize)
                 .Select(l => l.AsLeaveItem())
-                .AsNoTracking()
                 .ToListAsync();
 
             var response = new PaginatedResponse<LeaveItem>
@@ -55,13 +51,41 @@ internal static class LeaveApi
             return TypedResults.Ok(response);
         });
 
-        group.MapGet("/", async (TodoDbContext db, CurrentUser owner) =>
+        group.MapGet("/", async Task<Ok<PaginatedResponse<LeaveItem>>> (TodoDbContext db, CurrentUser owner, [AsParameters] PaginationRequest pagination) => // Added pagination
         {
-            return await db.Leaves
-                .Where(leave => leave.OwnerId == owner.Id)
+            // Base query filtered by owner
+            var query = db.Leaves
+               .Where(leave => leave.OwnerId == owner.Id)
+               .AsNoTracking();
+
+            // Get counts specific to the owner
+            var totalCount = await query.CountAsync();
+            var pendingCount = await query.CountAsync(l => l.Status == LeaveStatus.Pending);
+            var approvedCount = await query.CountAsync(l => l.Status == LeaveStatus.Approved);
+            var rejectedCount = await query.CountAsync(l => l.Status == LeaveStatus.Rejected);
+
+            // Get paginated data
+            var leaves = await query
+                .OrderBy(l => l.Status == LeaveStatus.Pending ? 0 : 1)
+                .ThenBy(l => l.StartDate)
+                .Skip((pagination.PageNumber - 1) * pagination.PageSize)
+                .Take(pagination.PageSize)
                 .Select(l => l.AsLeaveItem())
-                .AsNoTracking()
                 .ToListAsync();
+
+            var response = new PaginatedResponse<LeaveItem>
+            {
+                Data = leaves,
+                TotalCount = totalCount,
+                PendingCount = pendingCount,
+                ApprovedCount = approvedCount,
+                RejectedCount = rejectedCount,
+                PageNumber = pagination.PageNumber,
+                PageSize = pagination.PageSize
+            };
+
+            // Always return Ok, even if empty list, response structure indicates counts
+            return TypedResults.Ok(response);
         });
 
         group.MapGet("/{id}", async Task<Results<Ok<LeaveItem>, NotFound>> (TodoDbContext db, int id, CurrentUser owner) =>
@@ -97,7 +121,7 @@ internal static class LeaveApi
             }
 
             var rowsAffected = await db.Leaves
-                .Where(l => l.Id == id && (l.OwnerId == owner.Id || owner.IsAdmin))
+                .Where(l => l.Id == id && (l.OwnerId == owner.Id /* removed admin edit for now || owner.IsAdmin */)) // Let only owner edit
                 .ExecuteUpdateAsync(updates =>
                     updates.SetProperty(l => l.Type, leaveItem.Type)
                            .SetProperty(l => l.StartDate, leaveItem.StartDate)
@@ -108,37 +132,62 @@ internal static class LeaveApi
 
         group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (TodoDbContext db, int id, CurrentUser owner) =>
         {
-            var rowsAffected = await db.Leaves
-                .Where(l => l.Id == id && (l.OwnerId == owner.Id || owner.IsAdmin))
-                .ExecuteDeleteAsync();
-
-            return rowsAffected == 0 ? TypedResults.NotFound() : TypedResults.Ok();
-        });
-
-        group.MapPost("/{id}/approve", async Task<Results<Ok, NotFound, BadRequest>> (TodoDbContext db, int id, CurrentUser approver) =>
-        {
-            if (!approver.IsAdmin)
+            // Allow delete only if pending and owned by user, OR if admin
+            var leaveToDelete = await db.Leaves.FindAsync(id);
+            if (leaveToDelete == null)
             {
                 return TypedResults.NotFound();
             }
 
-            var leave = await db.Leaves.FindAsync(id);
-            if (leave == null || leave.Status == LeaveStatus.Approved)
+            bool canDelete = (leaveToDelete.OwnerId == owner.Id && leaveToDelete.Status == LeaveStatus.Pending) || owner.IsAdmin;
+
+            if (!canDelete)
             {
-                return TypedResults.BadRequest();
+                // Return 404 or 403 if trying to delete something not allowed
+                return TypedResults.NotFound();
             }
 
-            var user = await db.Users.FindAsync(leave.OwnerId);
-            if (user == null || !leave.Approve(user))
+            var rowsAffected = await db.Leaves
+                .Where(l => l.Id == id) // Condition already checked
+                .ExecuteDeleteAsync();
+
+
+            return rowsAffected == 0 ? TypedResults.NotFound() : TypedResults.Ok();
+        });
+
+        group.MapPost("/{id}/approve", async Task<Results<Ok, NotFound, BadRequest<string>>> (TodoDbContext db, int id, CurrentUser approver) =>
+        {
+            if (!approver.IsAdmin)
             {
-                return TypedResults.BadRequest();
+                // Return 403 Forbidden or 404 Not Found if non-admin tries
+                return TypedResults.NotFound();
+            }
+
+            var leave = await db.Leaves.FindAsync(id);
+            // Ensure leave exists and is pending before approving
+            if (leave == null || leave.Status != LeaveStatus.Pending)
+            {
+                return TypedResults.BadRequest("Leave request not found or already processed.");
+            }
+
+            // Need user context to potentially adjust balances
+            var user = await db.Users.Include(u => u.LeaveBalances).FirstOrDefaultAsync(u => u.Id == leave.OwnerId);
+            if (user == null)
+            {
+                return TypedResults.BadRequest("Leave owner not found.");
+            }
+
+            if (!leave.Approve(user))
+            {
+                // Approval logic might fail (e.g., start date passed)
+                return TypedResults.BadRequest("Could not approve leave request.");
             }
 
             await db.SaveChangesAsync();
             return TypedResults.Ok();
         });
 
-        group.MapPost("/{id}/reject", async Task<Results<Ok, NotFound, BadRequest>> (TodoDbContext db, int id, CurrentUser approver) =>
+        group.MapPost("/{id}/reject", async Task<Results<Ok, NotFound, BadRequest<string>>> (TodoDbContext db, int id, CurrentUser approver) =>
         {
             if (!approver.IsAdmin)
             {
@@ -146,15 +195,21 @@ internal static class LeaveApi
             }
 
             var leave = await db.Leaves.FindAsync(id);
+            // Allow rejection of Pending OR Approved leaves (to revert an approval)
             if (leave == null || leave.Status == LeaveStatus.Rejected)
             {
-                return TypedResults.BadRequest();
+                return TypedResults.BadRequest("Leave request not found or already rejected.");
             }
 
-            var user = await db.Users.FindAsync(leave.OwnerId);
-            if (user == null || !leave.Reject(user))
+            var user = await db.Users.Include(u => u.LeaveBalances).FirstOrDefaultAsync(u => u.Id == leave.OwnerId);
+            if (user == null)
             {
-                return TypedResults.BadRequest();
+                return TypedResults.BadRequest("Leave owner not found.");
+            }
+
+            if (!leave.Reject(user))
+            {
+                return TypedResults.BadRequest("Could not reject leave request.");
             }
 
             await db.SaveChangesAsync();

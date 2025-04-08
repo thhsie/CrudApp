@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { Leave, LeaveStatus } from '../../types/leave';
-import { LeaveCard } from './LeaveCard';
+import { LeaveCard } from './LeaveCard'; // Assuming LeaveCard is in the same directory or imported correctly
 import { Loading } from '../ui/Loading';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface LeaveListProps {
-  leaves: Leave[];
-  isLoading: boolean;
-  error: Error | null;
+  leaves: Leave[]; // This will be the potentially flattened list from infinite queries
+  isLoading: boolean; // Overall loading state from parent (initial load)
+  error: Error | null; // Overall error state from parent (initial load)
   onApprove?: (id: number) => void;
   onReject?: (id: number) => void;
   onDelete?: (id: number) => void;
@@ -19,8 +19,8 @@ interface LeaveListProps {
 
 export const LeaveList = ({
   leaves,
-  isLoading, // Note: Parent component handles overall loading/error display now
-  error,     // This component primarily focuses on filtering and mapping
+  isLoading,
+  error,
   onApprove,
   onReject,
   onDelete,
@@ -35,25 +35,26 @@ export const LeaveList = ({
     ? leaves
     : leaves.filter(leave => leave.status === filter);
 
-  // Calculate counts for tabs
-  const counts = React.useMemo(() => ({ // Memoize counts calculation
+  // *** UPDATED: Calculate counts client-side based on the *full* list passed in ***
+  const counts = React.useMemo(() => ({
       all: leaves.length,
       [LeaveStatus.Pending]: leaves.filter(l => l.status === LeaveStatus.Pending).length,
       [LeaveStatus.Approved]: leaves.filter(l => l.status === LeaveStatus.Approved).length,
       [LeaveStatus.Rejected]: leaves.filter(l => l.status === LeaveStatus.Rejected).length,
-  }), [leaves]);
+  }), [leaves]); // Recalculate whenever the leaves list changes
 
-  // Don't show tabs if there are no leaves at all and not loading
-  const showTabs = leaves.length > 0 && !isLoading;
+  // Show tabs only if there's data and not in initial loading state
+  const showTabs = !isLoading && leaves.length > 0;
 
   return (
     <div>
-      {/* Filter Tabs - Use tabs-boxed for a cleaner look */}
+      {/* Filter Tabs */}
       {showTabs && (
           <div role="tablist" className="tabs tabs-boxed mb-6 bg-base-200/50 p-1">
+            {/* Use client-side calculated counts */}
             <button
               role="tab"
-              className={`tab ${filter === 'all' ? 'tab-active' : ''} flex-1`} // Use flex-1 for equal width
+              className={`tab ${filter === 'all' ? 'tab-active' : ''} flex-1`}
               onClick={() => setFilter('all')}
               aria-selected={filter === 'all'}
             >
@@ -61,7 +62,7 @@ export const LeaveList = ({
             </button>
             <button
               role="tab"
-              className={`tab ${filter === LeaveStatus.Pending ? 'tab-active !bg-warning !text-warning-content' : ''} flex-1`} // Use ! to ensure override, specify text color
+              className={`tab ${filter === LeaveStatus.Pending ? 'tab-active !bg-warning !text-warning-content' : ''} flex-1`}
               onClick={() => setFilter(LeaveStatus.Pending)}
               aria-selected={filter === LeaveStatus.Pending}
             >
@@ -88,16 +89,18 @@ export const LeaveList = ({
 
       {/* Leave Cards List */}
       <div className="space-y-4">
-        {/* Handle loading/error states passed from parent */}
+        {/* Handle initial loading/error states passed from parent */}
         {isLoading ? (
             <Loading />
         ) : error ? (
             <ErrorDisplay message={error.message || "Failed to load leaves."} />
         ) : leaves.length === 0 ? (
-            // Specific message if no leaves exist at all
+             // Message if no leaves exist at all (after initial load)
+             // This is now handled by the parent component usually (Dashboard/LeaveManagement)
+             // Keep a fallback here just in case.
              <p className="text-center py-8 text-base-content/70 italic">No leave requests found.</p>
         ) : filteredLeaves.length === 0 ? (
-             // Specific message if filters yield no results
+             // Message if filters yield no results
             <p className="text-center py-8 text-base-content/70 italic">No leave requests match the selected filter.</p>
         ) : (
           // Render filtered leaves
@@ -105,10 +108,10 @@ export const LeaveList = ({
             <LeaveCard
               key={leave.id}
               leave={leave}
-              onApprove={isAdmin ? onApprove : undefined} // Pass only if admin
-              onReject={isAdmin ? onReject : undefined} // Pass only if admin
-              onDelete={onDelete} // Delete logic handled within LeaveCard based on role/status
-              isApproving={isApproving} // Pass mutation status
+              onApprove={isAdmin ? onApprove : undefined}
+              onReject={isAdmin ? onReject : undefined}
+              onDelete={onDelete} // Delete logic based on user/status handled internally
+              isApproving={isApproving}
               isRejecting={isRejecting}
               isDeleting={isDeleting}
             />
