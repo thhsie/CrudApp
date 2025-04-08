@@ -6,10 +6,6 @@
   logs: false; /* Disable daisyUI logs in production builds */
 }
 
-/* Custom style for active NavLink */
-.active {
-  @apply bg-primary text-primary-content; /* Example styling */
-}
 
 /* Optional: Add custom base styles or overrides here */
 body {
