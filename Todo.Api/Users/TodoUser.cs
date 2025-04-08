@@ -44,6 +44,23 @@ public class TodoUser : IdentityUser
     {
         LeaveBalances = LeaveBalances.DecreaseSpecialLeaves(amount);
     }
+
+    public bool HasSufficientLeaveBalance(int leaveType, int days)
+    {
+        if (LeaveBalances == null)
+        {
+            return false;
+        }
+
+        return (LeaveType)leaveType switch
+        {
+            LeaveType.Annual => LeaveBalances.AnnualLeavesBalance >= days,
+            LeaveType.Sick => LeaveBalances.SickLeavesBalance >= days,
+            LeaveType.Special => LeaveBalances.SpecialLeavesBalance >= days,
+            LeaveType.Unpaid => true,
+            _ => false, // Unknown leave type
+        };
+    }
     #endregion
 }
 

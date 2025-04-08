@@ -29,6 +29,7 @@ export interface Leave {
     startDate: string; // Date string from API (e.g., ISO 8601)
     endDate: string;   // Date string from API (e.g., ISO 8601)
     status: LeaveStatus; // Numeric enum value
+    ownerEmail: string;
 }
 
 /** Matches the PaginatedResponse<LeaveItem> from the backend API */

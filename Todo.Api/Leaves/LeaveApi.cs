@@ -22,7 +22,7 @@ internal static class LeaveApi
                 return TypedResults.NotFound();
             }
 
-            var query = db.Leaves.AsNoTracking(); // Start query
+            var query = db.Leaves.AsSplitQuery().AsNoTracking();
 
             var totalCount = await query.CountAsync();
             var pendingCount = await query.CountAsync(l => l.Status == LeaveStatus.Pending);
@@ -34,7 +34,19 @@ internal static class LeaveApi
                 .ThenBy(l => l.StartDate)
                 .Skip((pagination.PageNumber - 1) * pagination.PageSize)
                 .Take(pagination.PageSize)
-                .Select(l => l.AsLeaveItem())
+                // Join with Users to get the email
+                .Join(db.Users, // Inner sequence
+                      leave => leave.OwnerId, // Outer key selector
+                      user => user.Id, // Inner key selector
+                      (leave, user) => new LeaveItem // Result selector
+                      {
+                          Id = leave.Id,
+                          Type = leave.Type,
+                          StartDate = leave.StartDate,
+                          EndDate = leave.EndDate,
+                          Status = leave.Status,
+                          OwnerEmail = user.Email // Project the email
+                      })
                 .ToListAsync();
 
             var response = new PaginatedResponse<LeaveItem>
@@ -53,7 +65,6 @@ internal static class LeaveApi
 
         group.MapGet("/", async Task<Ok<PaginatedResponse<LeaveItem>>> (TodoDbContext db, CurrentUser owner, [AsParameters] PaginationRequest pagination) => // Added pagination
         {
-            // Base query filtered by owner
             var query = db.Leaves
                .Where(leave => leave.OwnerId == owner.Id)
                .AsNoTracking();
@@ -70,7 +81,16 @@ internal static class LeaveApi
                 .ThenBy(l => l.StartDate)
                 .Skip((pagination.PageNumber - 1) * pagination.PageSize)
                 .Take(pagination.PageSize)
-                .Select(l => l.AsLeaveItem())
+                // Select directly into LeaveItem, using the known owner's email
+                .Select(leave => new LeaveItem
+                {
+                    Id = leave.Id,
+                    Type = leave.Type,
+                    StartDate = leave.StartDate,
+                    EndDate = leave.EndDate,
+                    Status = leave.Status,
+                    OwnerEmail = owner.User.Email // Use email from the CurrentUser object
+                })
                 .ToListAsync();
 
             var response = new PaginatedResponse<LeaveItem>
@@ -88,17 +108,52 @@ internal static class LeaveApi
             return TypedResults.Ok(response);
         });
 
-        group.MapGet("/{id}", async Task<Results<Ok<LeaveItem>, NotFound>> (TodoDbContext db, int id, CurrentUser owner) =>
+        group.MapGet("/{id}", async Task<Results<Ok<LeaveItem>, NotFound>> (TodoDbContext db, int id, CurrentUser currentUser) =>
         {
-            return await db.Leaves.FindAsync(id) switch
+            var leaveItem = await db.Leaves
+                .Where(l => l.Id == id)
+                // Join with Users to get the email
+                .Join(db.Users,
+                      leave => leave.OwnerId,
+                      user => user.Id,
+                      (leave, user) => new { Leave = leave, User = user }) // Intermediate anonymous type
+                .Select(joined => new LeaveItem // Project to LeaveItem
+                {
+                    Id = joined.Leave.Id,
+                    Type = joined.Leave.Type,
+                    StartDate = joined.Leave.StartDate,
+                    EndDate = joined.Leave.EndDate,
+                    Status = joined.Leave.Status,
+                    OwnerEmail = joined.User.Email
+                })
+                .FirstOrDefaultAsync();
+
+            if (leaveItem == null)
             {
-                Leave leave when leave.OwnerId == owner.Id || owner.IsAdmin => TypedResults.Ok(leave.AsLeaveItem()),
-                _ => TypedResults.NotFound()
-            };
+                return TypedResults.NotFound();
+            }
+
+            // Need to re-fetch the original leave entity briefly to check ownership
+            // This is slightly less efficient but necessary for the authorization check here
+            var originalLeave = await db.Leaves.AsNoTracking().FirstOrDefaultAsync(l => l.Id == id);
+            if (originalLeave == null || (originalLeave.OwnerId != currentUser.Id && !currentUser.IsAdmin))
+            {
+                // If the leave doesn't exist OR the user is not the owner and not an admin
+                return TypedResults.NotFound(); // Treat as NotFound for security
+            }
+
+            // If ownership check passes, return the projected DTO
+            return TypedResults.Ok(leaveItem);
         });
 
-        group.MapPost("/", async Task<Created<LeaveItem>> (TodoDbContext db, LeaveItem newLeave, CurrentUser owner) =>
+        group.MapPost("/", async Task<Results<Created<LeaveItem>, BadRequest<string>>> (TodoDbContext db, LeaveItem newLeave, CurrentUser owner) =>
         {
+            var leaveDays = (int)(newLeave.EndDate - newLeave.StartDate).TotalDays;
+            if (!owner.User.HasSufficientLeaveBalance(newLeave.Type, leaveDays))
+            {
+                return TypedResults.BadRequest("Insufficient leave balance.");
+            }
+
             var leave = new Leave
             {
                 OwnerId = owner.Id,
@@ -113,21 +168,39 @@ internal static class LeaveApi
             return TypedResults.Created($"/leaves/{leave.Id}", leave.AsLeaveItem());
         });
 
-        group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest>> (TodoDbContext db, int id, LeaveItem leaveItem, CurrentUser owner) =>
+        group.MapPut("/{id}", async Task<Results<Ok, NotFound, BadRequest<string>>> (TodoDbContext db, int id, LeaveItem leaveItem, CurrentUser owner) =>
         {
             if (id != leaveItem.Id)
             {
-                return TypedResults.BadRequest();
+                return TypedResults.BadRequest("Route and payload Ids must match.");
             }
 
-            var rowsAffected = await db.Leaves
-                .Where(l => l.Id == id && (l.OwnerId == owner.Id /* removed admin edit for now || owner.IsAdmin */)) // Let only owner edit
-                .ExecuteUpdateAsync(updates =>
-                    updates.SetProperty(l => l.Type, leaveItem.Type)
-                           .SetProperty(l => l.StartDate, leaveItem.StartDate)
-                           .SetProperty(l => l.EndDate, leaveItem.EndDate));
+            var leave = await db.Leaves.FindAsync(id);
 
-            return rowsAffected == 0 ? TypedResults.NotFound() : TypedResults.Ok();
+            if (leave == null || leave.OwnerId != owner.Id)
+            {
+                return TypedResults.NotFound();
+            }
+
+            // Check if the leave is still pending - only pending leaves can be edited
+            if (leave.Status != LeaveStatus.Pending)
+            {
+                return TypedResults.BadRequest("Only pending leave requests can be modified.");
+            }
+
+            // Check balance before updating
+            var leaveDays = (int)(leaveItem.EndDate - leaveItem.StartDate).TotalDays;
+            if (!owner.User.HasSufficientLeaveBalance(leaveItem.Type, leaveDays))
+            {
+                return TypedResults.BadRequest("Insufficient leave balance for the updated request.");
+            }
+
+            // Update properties
+            leave.UpdateFromLeaveItem(leaveItem);
+
+            await db.SaveChangesAsync();
+
+            return TypedResults.Ok();
         });
 
         group.MapDelete("/{id}", async Task<Results<NotFound, Ok>> (TodoDbContext db, int id, CurrentUser owner) =>

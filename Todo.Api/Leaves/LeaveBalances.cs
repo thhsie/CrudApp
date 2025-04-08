@@ -22,7 +22,11 @@ public class LeaveBalances
 
     public LeaveBalances DecreaseAnnualLeaves(int amount)
     {
-        int newBalance = Math.Max(0, AnnualLeavesBalance - amount);
+        if (amount > AnnualLeavesBalance)
+        {
+            return this;
+        }
+        int newBalance = AnnualLeavesBalance - amount;
         return new LeaveBalances(newBalance, SickLeavesBalance, SpecialLeavesBalance);
     }
 
@@ -33,7 +37,11 @@ public class LeaveBalances
 
     public LeaveBalances DecreaseSickLeaves(int amount)
     {
-        int newBalance = Math.Max(0, SickLeavesBalance - amount);
+        if (amount > SickLeavesBalance)
+        {
+            return this;
+        }
+        int newBalance = SickLeavesBalance - amount;
         return new LeaveBalances(AnnualLeavesBalance, newBalance, SpecialLeavesBalance);
     }
 
@@ -44,7 +52,11 @@ public class LeaveBalances
 
     public LeaveBalances DecreaseSpecialLeaves(int amount)
     {
-        int newBalance = Math.Max(0, SpecialLeavesBalance - amount);
+        if (amount > SpecialLeavesBalance)
+        {
+            return this;
+        }
+        int newBalance = SpecialLeavesBalance - amount;
         return new LeaveBalances(AnnualLeavesBalance, SickLeavesBalance, newBalance);
     }
 }

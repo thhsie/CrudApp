@@ -91,6 +91,14 @@ export const LeaveCard = ({
             </div>
           </div>
 
+          {/* Requested By (Admin only) */}
+          {isAdmin && leave.ownerEmail && (
+            <div className="mt-2"> {/* Add some margin top */}
+              <p className="text-xs uppercase tracking-wider text-base-content/60 mb-0.5">Requested By</p>
+              <p className="font-medium text-sm">{leave.ownerEmail}</p> {/* Slightly smaller font */}
+            </div>
+          )}
+
           {/* Actions */}
           {(isAdmin || canDelete) && ( // Only show actions div if there are actions
             <div className="card-actions justify-end items-center mt-3 pt-3 border-t border-base-200 space-x-2"> {/* Added border-top */}
