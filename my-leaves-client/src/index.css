@@ -13,6 +13,16 @@ body {
   @apply min-h-screen bg-base-200; /* Apply base background to body for overall consistency */
 }
 
+/* --- ADD HOVER EFFECT FOR DAY PICKER --- */
+/* Target day cells within the DaisyUI-styled picker */
+/* Exclude disabled and outside days from hover effect */
+.react-day-picker .rdp-day:not([disabled]):not(.rdp-day_outside):hover {
+  /* Apply a subtle background from the DaisyUI theme */
+  /* Using base-300 provides a slight elevation effect */
+  @apply bg-base-300 rounded; /* Added rounded for better visuals */
+}
+/* --- END HOVER EFFECT --- */
+
 /* Example: Custom scrollbar styling (optional) */
 /* ::-webkit-scrollbar {
   width: 8px;
