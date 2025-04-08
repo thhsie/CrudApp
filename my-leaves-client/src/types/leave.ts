@@ -30,3 +30,14 @@ export interface Leave {
     endDate: string;   // Date string from API (e.g., ISO 8601)
     status: LeaveStatus; // Numeric enum value
 }
+
+/** Matches the PaginatedResponse<LeaveItem> from the backend API */
+export interface PaginatedLeaveResponse {
+    data: Leave[];
+    totalCount: number;
+    pendingCount: number;
+    approvedCount: number;
+    rejectedCount: number;
+    pageNumber: number;
+    pageSize: number;
+}
