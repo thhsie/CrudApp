@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Leave, LeaveStatus } from '../../types/leave';
-import { LeaveCard } from './LeaveCard'; // Assuming LeaveCard is in the same directory or imported correctly
+import { LeaveCard } from './LeaveCard';
 import { Loading } from '../ui/Loading';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
 import { useAuth } from '../../contexts/AuthContext';

@@ -1,9 +1,7 @@
-// --- Updated File: ./my-leaves-client/src/hooks/useLeaves.ts ---
 import { useMutation, useQuery, useQueryClient, useInfiniteQuery, InfiniteData } from '@tanstack/react-query';
 import { leaveService } from '../services/leaveService';
 import { LeaveRequestData, PaginatedLeaveResponse } from '../types/leave';
-import { getApiErrorMessage } from '../services/authService'; // Use shared error helper
-import { authKeys } from './authKeys'; // Import authKeys for user query invalidation
+import { authKeys } from './authKeys';
 
 // Query keys factory for leaves
 const leavesKeys = {

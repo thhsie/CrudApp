@@ -1,14 +1,11 @@
-/* =============================================
-   7. src/components/layout/Sidebar.tsx
-   ============================================= */
 import { useAuth } from '../../contexts/AuthContext';
 import { NavLink } from 'react-router-dom';
 import {
     FaTachometerAlt,
     FaCalendarAlt,
-    FaUserShield,
+    // FaUserShield,
     FaLeaf,
-    FaUsersCog, // Import new icon for user management
+    FaUsersCog,
 } from 'react-icons/fa';
 
 export const Sidebar = () => {
@@ -16,8 +13,8 @@ export const Sidebar = () => {
 
   // Helper for NavLink classes
   const getNavLinkClass = ({ isActive }: { isActive: boolean }): string => {
-    const baseClasses = "flex items-center gap-3 p-2 rounded-lg transition-colors duration-150 hover:bg-base-300"; // Base styles
-    const activeClasses = "bg-primary text-primary-content"; // Active state styles
+    const baseClasses = "flex items-center gap-3 p-2 rounded-lg transition-colors duration-150 hover:bg-base-300";
+    const activeClasses = "bg-primary text-primary-content";
     return `${baseClasses} ${isActive ? activeClasses : ''}`;
   };
 

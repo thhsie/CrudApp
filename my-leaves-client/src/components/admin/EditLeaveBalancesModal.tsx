@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { UserListItem, LeaveBalancesUpdateDto } from '../../types/auth';
 import { ErrorDisplay } from '../ui/ErrorDisplay';

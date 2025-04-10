@@ -1,10 +1,9 @@
-// --- Updated File: ./my-leaves-client/src/components/leaves/LeaveForm.tsx ---
 import React, { useState, useEffect, useRef } from 'react';
 import { LeaveRequestData, LeaveType } from '../../types/leave';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
 import { DayPicker } from 'react-day-picker';
 import { format, isValid, parse } from 'date-fns';
-import 'react-day-picker/dist/style.css'; // Base styles
+import 'react-day-picker/dist/style.css';
 
 interface LeaveFormProps {
   onSubmit: (leave: LeaveRequestData) => void;

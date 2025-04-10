@@ -1,7 +1,3 @@
-/* =============================================
-   9. src/components/admin/UserListTable.tsx (NEW FILE)
-   ============================================= */
-import React from 'react';
 import { UserListItem } from '../../types/auth';
 
 interface UserListTableProps {

@@ -1,13 +1,10 @@
-/* =============================================
-   2. src/services/authService.ts
-   ============================================= */
 import api from './api';
-import { LoginDto, RegisterDto, User, LeaveBalancesUpdateDto, UserListItem, PaginatedUserResponse } from '../types/auth';
+import { LoginDto, RegisterDto, User, LeaveBalancesUpdateDto, PaginatedUserResponse } from '../types/auth';
 import { AxiosError } from 'axios';
 
 const AUTH_BASE_URL = '/auth';
 const USERS_BASE_URL = '/users';
-const DEFAULT_PAGE_SIZE = 10; // Consistent page size
+const DEFAULT_PAGE_SIZE = 10;
 
 // Helper to attempt fetching user data after auth actions
 const fetchCurrentUserAfterAction = async (): Promise<User | null> => {

@@ -1,15 +1,12 @@
-/* =============================================
-   2. src/pages/Dashboard.tsx (UPDATED)
-   ============================================= */
-import React, { useState, useMemo, useEffect } from 'react'; // Added useState, useEffect
+import { useState, useMemo, useEffect } from 'react';
 import { useLeaves } from '../hooks/useLeaves';
 import { LeaveList } from '../components/leaves/LeaveList';
-import { Feedback } from '../hooks/useAuthQuery'; // Import Feedback type from useAuthQuery
+import { Feedback } from '../hooks/useAuthQuery';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { ErrorDisplay } from '../components/ui/ErrorDisplay';
-import { Loading } from '../components/ui/Loading'; // Import Loading
-import { getApiErrorMessage } from '../services/authService'; // Import error helper
+import { Loading } from '../components/ui/Loading';
+import { getApiErrorMessage } from '../services/authService';
 
 // Re-define or import FeedbackAlert component here (same as in AdminUsers.tsx etc.)
 const FeedbackAlert = ({ feedback, onClose }: { feedback: Feedback; onClose: () => void }) => {

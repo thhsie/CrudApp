@@ -1,15 +1,12 @@
-/* =============================================
-   3. src/pages/Login.tsx (UPDATED)
-   ============================================= */
-import React, { useState, useEffect } from 'react'; // Added useState
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { LoginForm } from '../components/auth/LoginForm'; // Keep using this
+import { LoginForm } from '../components/auth/LoginForm';
 import { GoogleLogin } from '../components/auth/GoogleLogin';
-import { Feedback, useAuthQuery } from '../hooks/useAuthQuery'; // Import Feedback type
+import { Feedback, useAuthQuery } from '../hooks/useAuthQuery';
 import { useAuth } from '../contexts/AuthContext';
 import { Loading } from '../components/ui/Loading';
-import { getApiErrorMessage } from '../services/authService'; // Import error helper
-import { RegisterDto } from '../types/auth'; // Import RegisterDto
+import { getApiErrorMessage } from '../services/authService';
+import { RegisterDto } from '../types/auth';
 import { ErrorDisplay } from '../components/ui/ErrorDisplay';
 
 // Placeholder Register Form - REPLACE with actual implementation
@@ -115,7 +112,7 @@ export const Login = () => {
     }
     // Handle logout message
     else if (loggedOut && !loading && !isAuthenticated) {
-         setPageFeedback({ type: 'error', message: 'You have been logged out.' }); // Use info type if available
+         setPageFeedback({ type: 'success', message: 'You have been logged out.' }); // Use info type if available
          // Remove query param and navigate
          queryParams.delete('loggedOut');
          navigate(location.pathname + '?' + queryParams.toString(), { replace: true, state: location.state });
