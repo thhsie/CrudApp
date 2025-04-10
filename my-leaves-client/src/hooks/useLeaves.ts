@@ -1,29 +1,28 @@
+// --- Updated File: ./my-leaves-client/src/hooks/useLeaves.ts ---
 import { useMutation, useQuery, useQueryClient, useInfiniteQuery, InfiniteData } from '@tanstack/react-query';
 import { leaveService } from '../services/leaveService';
 import { LeaveRequestData, PaginatedLeaveResponse } from '../types/leave';
+import { getApiErrorMessage } from '../services/authService'; // Use shared error helper
+import { authKeys } from './authKeys'; // Import authKeys for user query invalidation
 
-// Query keys factory
+// Query keys factory for leaves
 const leavesKeys = {
   all: ['leaves'] as const,
-  // Key for user infinite query
   userAll: (pageSize: number) => [...leavesKeys.all, 'user', 'all', { pageSize }] as const,
-  // Key for admin infinite query
   adminAll: (pageSize: number) => [...leavesKeys.all, 'admin', 'all', { pageSize }] as const,
-  // Detail key
   detail: (id: number | undefined) => [...leavesKeys.all, 'detail', id] as const,
 };
 
-// Define page sizes (can be different)
+// Page sizes (ensure consistency or pass them if they vary)
 const USER_PAGE_SIZE = 10;
 const ADMIN_PAGE_SIZE = 10;
+const ADMIN_USERS_PAGE_SIZE = 10; // Page size used for the admin users infinite query
 
 export const useLeaves = () => {
   const queryClient = useQueryClient();
 
   // --- Queries ---
-
-  // Fetch USER leaves with infinite scrolling
-  const useUserLeavesInfinite = (pageSize: number = USER_PAGE_SIZE) => {
+   const useUserLeavesInfinite = (pageSize: number = USER_PAGE_SIZE) => {
      return useInfiniteQuery<
          PaginatedLeaveResponse,
          Error,
@@ -31,21 +30,17 @@ export const useLeaves = () => {
          readonly (string | number | { pageSize: number })[], // QueryKey type
          number // PageParam type
      >({
-         queryKey: leavesKeys.userAll(pageSize), // Use the specific user key
-         queryFn: ({ pageParam = 1 }) => leaveService.getUserLeaves(pageParam, pageSize), // Call user service function
+         queryKey: leavesKeys.userAll(pageSize),
+         queryFn: ({ pageParam = 1 }) => leaveService.getUserLeaves(pageParam, pageSize),
          initialPageParam: 1,
          getNextPageParam: (lastPage) => {
              const totalPages = Math.ceil(lastPage.totalCount / pageSize);
-             if (lastPage.pageNumber < totalPages) {
-                 return lastPage.pageNumber + 1;
-             }
-             return undefined;
+             return lastPage.pageNumber < totalPages ? lastPage.pageNumber + 1 : undefined;
          },
          staleTime: 1 * 60 * 1000, // Cache user list for 1 minute
      });
    };
 
-  // Fetch ADMIN leaves with infinite scrolling
   const useAdminLeavesInfinite = (pageSize: number = ADMIN_PAGE_SIZE) => {
     return useInfiniteQuery<
         PaginatedLeaveResponse,
@@ -66,79 +61,114 @@ export const useLeaves = () => {
     });
   };
 
-  // Hook to get a single leave's details
   const useLeaveDetail = (id: number | undefined) => {
     return useQuery({
       queryKey: leavesKeys.detail(id),
       queryFn: () => id ? leaveService.getLeaveById(id) : Promise.resolve(null),
-      enabled: !!id,
+      enabled: !!id, // Only run query if id is defined
+      staleTime: 5 * 60 * 1000, // Cache detail for 5 minutes
     });
   };
 
   // --- Mutations ---
 
-  // Common invalidation logic - UPDATED to invalidate user infinite query too
-  const invalidateLeavesQueries = (id?: number) => {
-    // Invalidate the user infinite query
-     queryClient.invalidateQueries({ queryKey: ['leaves', 'user', 'all'] });
-    // Invalidate the admin infinite query
+  // Centralized function to invalidate relevant queries after leave actions
+  const invalidateRelevantQueries = (leaveId?: number) => {
+    console.log('Invalidating queries after leave action...'); // For debugging
+
+    // Invalidate User Leaves List (more robust invalidation)
+    queryClient.invalidateQueries({ queryKey: ['leaves', 'user', 'all'] });
+
+    // Invalidate Admin Leaves List (more robust invalidation)
     queryClient.invalidateQueries({ queryKey: ['leaves', 'admin', 'all'] });
-    // Invalidate specific detail query if ID is provided
-    if (id) {
-      queryClient.invalidateQueries({ queryKey: leavesKeys.detail(id) });
+
+    // Invalidate Specific Leave Detail (if ID provided)
+    if (leaveId) {
+      queryClient.invalidateQueries({ queryKey: leavesKeys.detail(leaveId) });
     }
+
+    // Invalidate Admin Users List (because balances might change on approve/reject)
+    // This assumes approve/reject actions call this function.
+    console.log('Invalidating admin users query due to potential balance change...');
+    queryClient.invalidateQueries({ queryKey: authKeys.adminUsers(ADMIN_USERS_PAGE_SIZE) });
+     // More robust invalidation:
+     // queryClient.invalidateQueries({ queryKey: ['auth', 'users', 'admin', 'all'] });
   };
 
-  // Create Leave Mutation (Remains the same, invalidation logic handles both lists)
+  // Create Leave Mutation
   const createLeaveMutation = useMutation({
     mutationFn: (newLeave: LeaveRequestData) => leaveService.createLeave(newLeave),
     onSuccess: (createdLeave) => {
       console.log('Leave created:', createdLeave);
-      invalidateLeavesQueries(); // Invalidate lists
-       queryClient.setQueryData(leavesKeys.detail(createdLeave.id), createdLeave);
+      // Invalidate lists (user and admin) after creation
+      invalidateRelevantQueries();
+      // Optimistically update detail view cache
+      queryClient.setQueryData(leavesKeys.detail(createdLeave.id), createdLeave);
+      // Feedback (e.g., alert/toast) should be handled by the component calling the mutation
     },
-    onError: (error) => console.error("Failed to create leave:", error)
+    onError: (error) => {
+      console.error("Failed to create leave:", error);
+      // Error feedback should be handled by the component (using errorCreating state)
+    }
   });
 
-  // Approve Leave Mutation (Remains the same, invalidation logic handles both lists)
+  // Approve Leave Mutation
   const approveLeaveMutation = useMutation({
     mutationFn: (id: number) => leaveService.approveLeave(id),
     onSuccess: (_, id) => {
       console.log('Leave approved:', id);
-      invalidateLeavesQueries(id); // Invalidate lists and detail
+      // Invalidate leaves lists, specific detail, AND admin users list
+      invalidateRelevantQueries(id);
+      // Feedback handled by the calling component
     },
-    onError: (error, id) => console.error(`Failed to approve leave ${id}:`, error)
+    onError: (error, id) => {
+      console.error(`Failed to approve leave ${id}:`, error);
+      // Error feedback handled by the calling component (using errorApproving state)
+    }
   });
 
-  // Reject Leave Mutation (Remains the same, invalidation logic handles both lists)
+  // Reject Leave Mutation
   const rejectLeaveMutation = useMutation({
     mutationFn: (id: number) => leaveService.rejectLeave(id),
     onSuccess: (_, id) => {
       console.log('Leave rejected:', id);
-      invalidateLeavesQueries(id);
+      // Invalidate leaves lists, specific detail, AND admin users list
+      invalidateRelevantQueries(id);
+      // Feedback handled by the calling component
     },
-    onError: (error, id) => console.error(`Failed to reject leave ${id}:`, error)
+    onError: (error, id) => {
+      console.error(`Failed to reject leave ${id}:`, error);
+      // Error feedback handled by the calling component (using errorRejecting state)
+    }
   });
 
-  // Delete Leave Mutation (Remains the same, invalidation logic handles both lists)
+  // Delete Leave Mutation
   const deleteLeaveMutation = useMutation({
     mutationFn: (id: number) => leaveService.deleteLeave(id),
     onSuccess: (_, id) => {
       console.log('Leave deleted:', id);
-      invalidateLeavesQueries(); // Invalidate lists
-      queryClient.removeQueries({ queryKey: leavesKeys.detail(id) });
+       // Invalidate only leave lists (not users, as delete doesn't change balance)
+       // and remove specific detail query
+       queryClient.invalidateQueries({ queryKey: ['leaves', 'user', 'all'] });
+       queryClient.invalidateQueries({ queryKey: ['leaves', 'admin', 'all'] });
+       queryClient.removeQueries({ queryKey: leavesKeys.detail(id) });
+      // Feedback handled by the calling component
     },
-     onError: (error, id) => console.error(`Failed to delete leave ${id}:`, error)
+     onError: (error, id) => {
+      console.error(`Failed to delete leave ${id}:`, error);
+      // Error feedback handled by the calling component (using errorDeleting state)
+     }
   });
 
   // --- Return values ---
+  // Expose hooks and mutation functions/states
   return {
-    // Hooks for Querying Data
-    useUserLeavesInfinite, // Hook for user paginated leaves
-    useAdminLeavesInfinite, // Hook for admin paginated leaves
-    useLeaveDetail, // Hook for single leave detail
+    // Query Hooks
+    useUserLeavesInfinite,
+    useAdminLeavesInfinite,
+    useLeaveDetail,
 
-    // Mutations & Status (apply across both user/admin contexts where relevant)
+    // Mutations (expose functions, loading states, and error states)
     createLeave: createLeaveMutation.mutate,
     createLeaveAsync: createLeaveMutation.mutateAsync,
     isCreating: createLeaveMutation.isPending,

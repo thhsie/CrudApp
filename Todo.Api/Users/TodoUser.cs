@@ -95,3 +95,17 @@ public class UserRole
     [Required]
     public string Role { get; set; } = default!;
 }
+
+public class LeaveBalancesDto // DTO for owned entity
+{
+    public int AnnualLeavesBalance { get; set; }
+    public int SickLeavesBalance { get; set; }
+    public int SpecialLeavesBalance { get; set; }
+}
+public class UserListItemDto
+{
+    public required string Id { get; set; }
+    public string? Email { get; set; }
+    public string? UserName { get; set; }
+    public LeaveBalancesDto? LeaveBalances { get; set; } // Use the DTO
+}

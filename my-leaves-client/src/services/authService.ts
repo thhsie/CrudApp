@@ -1,23 +1,19 @@
+/* =============================================
+   2. src/services/authService.ts
+   ============================================= */
 import api from './api';
-import { LoginDto, RegisterDto, User } from '../types/auth';
+import { LoginDto, RegisterDto, User, LeaveBalancesUpdateDto, UserListItem, PaginatedUserResponse } from '../types/auth';
 import { AxiosError } from 'axios';
 
 const AUTH_BASE_URL = '/auth';
+const USERS_BASE_URL = '/users';
+const DEFAULT_PAGE_SIZE = 10; // Consistent page size
 
 // Helper to attempt fetching user data after auth actions
-// NOTE: This relies on a hypothetical /auth/me endpoint in the BFF
-// If it doesn't exist, this will fail and the workaround in AuthContext is needed.
 const fetchCurrentUserAfterAction = async (): Promise<User | null> => {
     try {
-        // --- Ideal: Replace with actual BFF endpoint ---
-        const response = await api.get<User>('/users/me');
+        const response = await api.get<User>(`${USERS_BASE_URL}/me`);
         return response.data;
-
-        // --- Workaround Check (less reliable) ---
-        // await api.get('/leaves?limit=1'); // Ping protected route
-        // // Cannot get details here, return placeholder signal
-        // return { isAuthenticated: true } as unknown as User;
-
     } catch (error) {
         if (error instanceof AxiosError && error.response && error.response.status === 401) {
             return null; // Not authenticated
@@ -25,39 +21,50 @@ const fetchCurrentUserAfterAction = async (): Promise<User | null> => {
         console.error("Failed to fetch user details after auth action", error);
         return null; // Assume failure means not authenticated or error
     }
-}
+};
+
+// Helper to extract error messages (can be shared)
+export const getApiErrorMessage = (error: unknown): string => {
+    if (error instanceof AxiosError && error.response?.data) {
+        const data = error.response.data as any; // Use any for flexibility
+        // Check common ASP.NET Core Identity error structures
+        if (data.errors && typeof data.errors === 'object') {
+             // Flatten validation errors
+            return Object.values(data.errors).flat().join(' ');
+        }
+        return data.message || data.title || data.detail || data || 'An API error occurred.';
+    }
+    if (error instanceof Error) {
+        return error.message;
+    }
+    return 'An unexpected error occurred.';
+};
 
 export const authService = {
   /** Attempts login via BFF */
   login: async (loginData: LoginDto): Promise<User | null> => {
     await api.post(`${AUTH_BASE_URL}/login`, loginData);
-    // After successful POST, try to fetch user data
-    // This implicitly confirms login worked and gets user details if endpoint exists
     return await fetchCurrentUserAfterAction();
   },
 
   /** Attempts registration via BFF/API */
   register: async (registerData: RegisterDto): Promise<void> => {
-    // BFF forwards to API: POST /users/register
-    await api.post(`${AUTH_BASE_URL}/register`, {
+    await api.post(`${AUTH_BASE_URL}/register`, { // BFF forwards this to API /users/register
         email: registerData.email,
         password: registerData.password,
     });
-    // Registration doesn't automatically log in with default Identity setup
-    // User needs to log in separately after registering.
   },
 
   /** Logs out via BFF */
   logout: async (): Promise<void> => {
     await api.post(`${AUTH_BASE_URL}/logout`);
-    // BFF clears the session cookie.
   },
 
   /** Fetches the current user details from the BFF */
   fetchCurrentUser: async (): Promise<User | null> => {
      try {
-        const response = await api.get<User>(`users/me`); // Call the new endpoint
-        return response.data; // Returns the User object on success
+        const response = await api.get<User>(`${USERS_BASE_URL}/me`);
+        return response.data;
     } catch (error) {
         if (error instanceof AxiosError && error.response && error.response.status === 401) {
             return null; // Not authenticated
@@ -67,10 +74,8 @@ export const authService = {
     }
   },
 
-
-  /** Checks current authentication status */
+  /** Checks current authentication status (used on load) */
   checkCurrentUser: async (): Promise<User | null> => {
-     // This is the primary check used on app load etc.
     return await fetchCurrentUserAfterAction();
   },
 
@@ -79,17 +84,36 @@ export const authService = {
     window.location.href = `${AUTH_BASE_URL}/login/Google`;
   },
 
-  // Add other provider functions if needed
-  // initiateGitHubLogin: (): void => { ... }
-
-  /** Fetches user roles from the BFF */
+  /** Fetches user roles from the BFF (Admin) */
   fetchUserRoles: async (email: string): Promise<string[]> => {
     try {
-      const response = await api.get('/users/roles', { params: { email: email } });
+      const response = await api.get(`${USERS_BASE_URL}/roles`, { params: { email: email } });
       return response.data;
     } catch (error) {
       console.error('Failed to fetch user roles:', error);
       throw error;
     }
   },
+
+  // --- UPDATED/NEW ADMIN FUNCTIONS ---
+
+  /** Fetches paginated users (Admin) */
+  getAdminUsers: async (pageParam = 1, pageSize = DEFAULT_PAGE_SIZE): Promise<PaginatedUserResponse> => {
+    console.log(`Fetching admin users: page=${pageParam}, size=${pageSize}`);
+    try {
+        const response = await api.get<PaginatedUserResponse>(`${USERS_BASE_URL}/all`, {
+            params: { pageNumber: pageParam, pageSize }, // Pass pagination params
+        });
+        console.log("Fetched users page:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Failed to fetch admin users:", error);
+        throw error;
+    }
+  },
+
+  /** Updates leave balances for a specific user (Admin) */
+  updateUserLeaveBalances: async (userId: string, balances: LeaveBalancesUpdateDto): Promise<void> => {
+    await api.put(`${USERS_BASE_URL}/leave-balances/${userId}`, balances);
+  }
 };

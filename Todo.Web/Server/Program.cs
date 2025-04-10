@@ -44,5 +44,6 @@ app.MapLeaves();
 app.MapRoles();
 app.MapLeaveBalances();
 app.MapUsersMe();
+app.MapUsersAll();
 
 app.Run();

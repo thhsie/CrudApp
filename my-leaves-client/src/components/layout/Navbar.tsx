@@ -30,7 +30,7 @@ export const Navbar = () => {
         {isAuthenticated && user ? (
           <div className="dropdown dropdown-end">
             <label tabIndex={0} className="btn btn-ghost btn-circle avatar placeholder">
-              <div className="bg-neutral text-neutral-content rounded-full w-10">
+              <div className="bg-neutral text-neutral-content rounded-full w-10 flex justify-center items-center text-lg">
                 {user?.email ? user.email[0].toUpperCase() : '?'}
               </div>
             </label>
