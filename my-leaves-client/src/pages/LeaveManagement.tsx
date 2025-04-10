@@ -130,7 +130,7 @@ export const LeaveManagement = () => {
 
       {/* Header & Toggle Button */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold">Your leave requests {totalCount > 0 ? `(${totalCount})` : ''}</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Your leave requests</h1>
         <button
           className={`btn ${isFormVisible ? 'btn-outline btn-warning' : 'btn-primary'} min-w-[180px]`}
           onClick={() => setIsFormVisible(!isFormVisible)}

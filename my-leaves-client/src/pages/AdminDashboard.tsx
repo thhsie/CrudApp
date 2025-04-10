@@ -134,6 +134,11 @@ export const AdminDashboard = () => {
         <FeedbackAlert feedback={pageFeedback} onClose={() => setPageFeedback(null)} />
 
       {/* <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard - Manage Leaves</h1> */}
+      {/* Page Header */}
+      <div>
+        <h1 className="text-2xl md:text-3xl font-bold">Admin section</h1>
+        <p className="text-base-content/70 mt-1">Dashboard for managing leave requests.</p>
+      </div>
 
       {/* Stats Section */}
        <div className="stats stats-vertical lg:stats-horizontal w-full bg-base-100 border border-base-300 overflow-hidden">

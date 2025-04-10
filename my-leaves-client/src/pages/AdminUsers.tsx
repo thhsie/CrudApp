@@ -113,6 +113,10 @@ export const AdminUsers = () => {
   return (
     <div className="space-y-6 md:space-y-8 relative"> {/* Add relative for toast positioning */}
       {/* <h1 className="text-2xl md:text-3xl font-bold">Edit leave balances</h1> */}
+      <div>
+          <h1 className="text-2xl md:text-3xl font-bold">All leave balance details</h1>
+          <p className="text-base-content/70 mt-1">View and edit leave balances for users.</p>
+      </div>
 
       {/* Feedback Alert Display */}
        <FeedbackAlert feedback={feedback} onClose={() => setFeedback(null)} />
