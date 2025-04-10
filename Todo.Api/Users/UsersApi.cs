@@ -104,6 +104,7 @@ public static class UsersApi
                 currentUser.Id,
                 currentUser.User?.Email,
                 currentUser.IsAdmin,
+                currentUser.User.LeaveBalances,
             });
         }).RequireAuthorization(pb => pb.RequireCurrentUser());
 

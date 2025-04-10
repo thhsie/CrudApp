@@ -9,6 +9,7 @@ import { useAuth } from './contexts/AuthContext';
 import { Layout } from './components/layout/Layout';
 import { Loading } from './components/ui/Loading';
 import { JSX } from 'react';
+import Profile from './pages/Profile';
 
 const ProtectedRoute = ({ children, adminOnly = false }: { children: JSX.Element, adminOnly?: boolean }) => {
   const { isAuthenticated, isAdmin, loading } = useAuth();
@@ -74,7 +75,7 @@ export const router = createBrowserRouter([
       {
         // Temporary placeholder profile route
         path: 'profile',
-        element: <div>Profile Page Placeholder</div>
+        element: <Profile />
       },
       // Admin Section
       {

@@ -6,6 +6,7 @@ import {
     // FaUserShield,
     FaLeaf,
     FaUsersCog,
+    FaUserCircle,
 } from 'react-icons/fa';
 
 export const Sidebar = () => {
@@ -65,6 +66,18 @@ export const Sidebar = () => {
             {/* <li><NavLink to="/admin/settings" className={getNavLinkClass}><FaCog className="text-lg" />Settings</NavLink></li> */}
           </>
         )}
+
+        {/* --- Bottom Section: Profile Link --- */}
+        {/* Use mt-auto on the list item to push it to the bottom */}
+        <li className="mt-auto">
+            {/* Optional: Add a subtle divider above the profile link */}
+             {/* <div className="divider my-1 before:bg-base-content/5 after:bg-base-content/5"></div> */}
+            <NavLink to="/profile" className={getNavLinkClass}>
+                <FaUserCircle className="text-lg" />
+                Profile
+            </NavLink>
+        </li>
+        {/* --- End Bottom Section --- */}
       </ul>
     </div>
   );

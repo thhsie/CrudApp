@@ -7,6 +7,7 @@ export interface User {
     id: string;
     email: string;
     isAdmin: boolean;
+    leaveBalances?: LeaveBalances;
   }
 
 /** Data required for standard login via BFF */
