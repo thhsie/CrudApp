@@ -146,12 +146,13 @@ export const EditLeaveBalancesModal = ({
                 disabled={isSaving} // Disable when save is in progress
                 aria-invalid={!!displayError} // Accessibility attribute for invalid state
                 aria-describedby={displayError ? `balance-error-${user.id}` : undefined}
+                padding-bottom="2"
               />
            </label>
 
            {/* Input field for Sick Leaves */}
             <label className="form-control w-full">
-              <div className="label"><span className="label-text">Sick Leave balance</span></div>
+              <div className="label"><span className="label-text pt-3">Sick Leave balance</span></div>
               <input
                 type="number"
                 name="sickLeavesBalance"
@@ -168,7 +169,7 @@ export const EditLeaveBalancesModal = ({
 
           {/* Input field for Special Leaves */}
             <label className="form-control w-full">
-               <div className="label"><span className="label-text">Special Leave balance</span></div>
+               <div className="label"><span className="label-text pt-3">Special Leave balance</span></div>
                <input
                  type="number"
                  name="specialLeavesBalance"

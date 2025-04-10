@@ -3,11 +3,17 @@ import { leaveService } from '../services/leaveService';
 import { LeaveRequestData, PaginatedLeaveResponse } from '../types/leave';
 import { authKeys } from './authKeys';
 
+// Define filter shape type
+export interface LeaveAdminFilter {
+    pageSize?: number;
+    ownerEmail?: string | null; // Filter by owner's email
+}
+
 // Query keys factory for leaves
 const leavesKeys = {
   all: ['leaves'] as const,
   userAll: (pageSize: number) => [...leavesKeys.all, 'user', 'all', { pageSize }] as const,
-  adminAll: (pageSize: number) => [...leavesKeys.all, 'admin', 'all', { pageSize }] as const,
+  adminAll: (filter: LeaveAdminFilter) => [...leavesKeys.all, 'admin', 'all', { ...filter }] as const,
   detail: (id: number | undefined) => [...leavesKeys.all, 'detail', id] as const,
 };
 
@@ -39,19 +45,22 @@ export const useLeaves = () => {
      });
    };
 
-  const useAdminLeavesInfinite = (pageSize: number = ADMIN_PAGE_SIZE) => {
+  const useAdminLeavesInfinite = (filter: LeaveAdminFilter = {}) => { // Accept filter object
+    const pageSize = filter.pageSize ?? ADMIN_PAGE_SIZE; // Use default if not provided
+    const ownerEmail = filter.ownerEmail;
+
     return useInfiniteQuery<
         PaginatedLeaveResponse,
         Error,
         InfiniteData<PaginatedLeaveResponse>,
-        readonly (string | number | { pageSize: number })[], // QueryKey type
+        ReadonlyArray<string | number | LeaveAdminFilter>, // Updated QueryKey type
         number // PageParam type
-
     >({
-        queryKey: leavesKeys.adminAll(pageSize),
-        queryFn: ({ pageParam = 1 }) => leaveService.getAdminLeaves(pageParam, pageSize),
+        queryKey: leavesKeys.adminAll({ pageSize, ownerEmail }), // Use filter in key
+        queryFn: ({ pageParam = 1 }) => leaveService.getAdminLeaves(pageParam, pageSize, ownerEmail), // Pass email to service
         initialPageParam: 1,
         getNextPageParam: (lastPage) => {
+            // Use the actual pageSize used for the query
             const totalPages = Math.ceil(lastPage.totalCount / pageSize);
             return lastPage.pageNumber < totalPages ? lastPage.pageNumber + 1 : undefined;
         },

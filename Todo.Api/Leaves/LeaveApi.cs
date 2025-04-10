@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TodoApi.Shared;
 
@@ -15,14 +17,45 @@ internal static class LeaveApi
         group.RequirePerUserRateLimit();
         group.WithParameterValidation(typeof(LeaveItem), typeof(PaginationRequest));
 
-        group.MapGet("/all", async Task<Results<Ok<PaginatedResponse<LeaveItem>>, NotFound>> (TodoDbContext db, [AsParameters] PaginationRequest pagination, CurrentUser user) =>
+        group.MapGet("/all", async Task<Results<Ok<PaginatedResponse<LeaveItem>>, NotFound>> (TodoDbContext db, UserManager<TodoUser> userManager, [AsParameters] PaginationRequest pagination, [FromQuery] string? ownerEmail, CurrentUser user) =>
         {
             if (!user.IsAdmin)
             {
                 return TypedResults.NotFound();
             }
 
+            string? targetUserId = null;
+            // Find user ID if email filter is provided
+            if (!string.IsNullOrWhiteSpace(ownerEmail))
+            {
+                var targetUser = await userManager.FindByEmailAsync(ownerEmail);
+                if (targetUser == null)
+                {
+                    // Return empty results if email doesn't match any user
+                    var emptyResponse = new PaginatedResponse<LeaveItem>
+                    {
+                        Data = [],
+                        TotalCount = 0,
+                        PendingCount = 0,
+                        ApprovedCount = 0,
+                        RejectedCount = 0,
+                        PageNumber = pagination.PageNumber,
+                        PageSize = pagination.PageSize
+                    };
+                    return TypedResults.Ok(emptyResponse);
+                    // Or alternatively return BadRequest:
+                    // return TypedResults.BadRequest($"User with email '{ownerEmail}' not found.");
+                }
+                targetUserId = targetUser.Id;
+            }
+
             var query = db.Leaves.AsSplitQuery().AsNoTracking();
+
+            // Apply email filter conditionally
+            if (targetUserId != null)
+            {
+                query = query.Where(l => l.OwnerId == targetUserId);
+            }
 
             var totalCount = await query.CountAsync();
             var pendingCount = await query.CountAsync(l => l.Status == LeaveStatus.Pending);
@@ -63,7 +96,7 @@ internal static class LeaveApi
             return TypedResults.Ok(response);
         });
 
-        group.MapGet("/", async Task<Ok<PaginatedResponse<LeaveItem>>> (TodoDbContext db, CurrentUser owner, [AsParameters] PaginationRequest pagination) => // Added pagination
+        group.MapGet("/", async Task<Ok<PaginatedResponse<LeaveItem>>> (TodoDbContext db, CurrentUser owner, [AsParameters] PaginationRequest pagination) =>
         {
             var query = db.Leaves
                .Where(leave => leave.OwnerId == owner.Id)
