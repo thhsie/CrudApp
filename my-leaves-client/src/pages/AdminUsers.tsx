@@ -118,9 +118,9 @@ export const AdminUsers = () => {
        <FeedbackAlert feedback={feedback} onClose={() => setFeedback(null)} />
 
       {/* User List Card */}
-      <div className="card bg-base-100 shadow-lg border border-base-300/50">
+      <div className="card bg-base-100 border border-base-300">
         <div className="card-body p-5 md:p-6">
-          <h2 className="card-title mb-4 text-lg">User List ({totalCount})</h2>
+          <h2 className="card-title mb-4 text-lg">All users ({totalCount})</h2>
 
           {/* Render table if users exist, otherwise show message */}
           {allUsers.length > 0 ? (

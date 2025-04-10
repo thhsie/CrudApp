@@ -130,7 +130,7 @@ export const LeaveManagement = () => {
 
       {/* Header & Toggle Button */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold">My Leave Requests {totalCount > 0 ? `(${totalCount})` : ''}</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Your leave requests {totalCount > 0 ? `(${totalCount})` : ''}</h1>
         <button
           className={`btn ${isFormVisible ? 'btn-outline btn-warning' : 'btn-primary'} min-w-[180px]`}
           onClick={() => setIsFormVisible(!isFormVisible)}
@@ -148,7 +148,7 @@ export const LeaveManagement = () => {
        >
         <div className="card bg-base-100 shadow-lg border border-primary/30 mb-6 md:mb-8">
           <div className="card-body p-5 md:p-6">
-            <h2 className="card-title mb-3 text-lg">Submit New Leave Request</h2>
+            <h2 className="card-title mb-3 text-lg">New leave request</h2>
             <LeaveForm onSubmit={handleSubmit} isSubmitting={isCreating} />
              {/* Error during creation is shown in pageFeedback */}
           </div>
@@ -156,7 +156,7 @@ export const LeaveManagement = () => {
       </div>
 
       {/* Leave History/List Card */}
-      <div className="card bg-base-100 shadow-lg border border-base-300/50">
+      <div className="card bg-base-100 border border-base-300">
         <div className="card-body p-5 md:p-6">
            <h2 className="card-title mb-4 text-lg">Leave History</h2>
 

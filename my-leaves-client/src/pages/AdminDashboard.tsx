@@ -136,7 +136,7 @@ export const AdminDashboard = () => {
       {/* <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard - Manage Leaves</h1> */}
 
       {/* Stats Section */}
-       <div className="stats stats-vertical lg:stats-horizontal shadow-md w-full bg-base-100 border border-base-300/50 rounded-lg overflow-hidden">
+       <div className="stats stats-vertical lg:stats-horizontal w-full bg-base-100 border border-base-300 overflow-hidden">
          <div className="stat">
           <div className="stat-title text-base-content/70">Total Requests</div>
           <div className="stat-value">{counts.total}</div>
@@ -161,57 +161,56 @@ export const AdminDashboard = () => {
         <div className="card-body p-5 md:p-6">
           <h2 className="card-title mb-4 text-lg">All Leave Requests ({counts.total})</h2>
 
-           <LeaveList
-                response={{
-                    data: allAdminLeaves,
-                    totalCount: adminLeavesPages?.pages[0]?.totalCount ?? 0,
-                    pendingCount: adminLeavesPages?.pages[0]?.pendingCount ?? 0,
-                    approvedCount: adminLeavesPages?.pages[0]?.approvedCount ?? 0,
-                    rejectedCount: adminLeavesPages?.pages[0]?.rejectedCount ?? 0,
-                    pageNumber: adminLeavesPages?.pages.length ?? 1,
-                    pageSize: adminLeavesPages?.pages[0]?.pageSize ?? allAdminLeaves.length
-                }}
-                // Loading/Error handled above for initial load
-                isLoading={false}
-                error={null}
-                // Pass mutation handlers
-                onApprove={handleApprove}
-                onReject={handleReject}
-                onDelete={handleDelete}
-                // Pass mutation states for disabling buttons in LeaveCard
-                isApproving={isApproving}
-                isRejecting={isRejecting}
-                isDeleting={isDeleting}
-            />
+          <LeaveList
+            response={{
+              data: allAdminLeaves,
+              totalCount: counts.total,
+              pendingCount: counts.pending,
+              approvedCount: counts.approved,
+              rejectedCount: counts.rejected,
+              pageNumber: adminLeavesPages?.pages.length ?? 1,
+              pageSize: adminLeavesPages?.pages[0]?.pageSize ?? counts.total
+            }}
+            isLoading={isLoadingAdminLeaves && !isFetchingNextPage && allAdminLeaves.length === 0}
+            error={errorAdminLeaves && allAdminLeaves.length === 0 ? errorAdminLeaves : null}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            onDelete={handleDelete}
+            isApproving={isApproving}
+            isRejecting={isRejecting}
+            isDeleting={isDeleting}
+          />
 
-            {/* "Load More" Button Area */}
-            <div className="flex justify-center mt-6">
-                {hasNextPage && (
-                    <button
-                        onClick={() => fetchNextPage()}
-                        disabled={isFetchingNextPage || isLoadingAdminLeaves}
-                        className="btn btn-primary btn-outline w-full sm:w-auto"
-                        aria-busy={isFetchingNextPage}
-                    >
-                        {isFetchingNextPage ? (
-                            <><span className="loading loading-spinner loading-xs mr-2"></span>Loading more...</>
-                        ) : ( 'Load More Requests' )}
-                    </button>
-                )}
-                {!hasNextPage && allAdminLeaves.length > 0 && (
-                    <p className="text-center text-base-content/60 italic mt-4">All requests loaded.</p>
-                 )}
+          {/* "Load More" Button Area */}
+          <div className="flex justify-center mt-6">
+            {hasNextPage && (
+              <button
+                onClick={() => fetchNextPage()}
+                disabled={isFetchingNextPage || isLoadingAdminLeaves}
+                className="btn btn-primary btn-outline w-full sm:w-auto"
+                aria-busy={isFetchingNextPage}
+              >
+                {isFetchingNextPage ? (
+                  <><span className="loading loading-spinner loading-xs mr-2"></span>Loading more...</>
+                ) : ('Load More Requests')}
+              </button>
+            )}
+            {!hasNextPage && counts.total > 0 && (
+              <p className="text-center text-base-content/60 italic mt-4">All requests loaded.</p>
+            )}
+          </div>
+
+          {/* Handle case where there are truly zero requests overall */}
+          {counts.total === 0 && !isLoadingAdminLeaves && !errorAdminLeaves && (
+            <p className="text-center py-8 text-base-content/70 italic">No leave requests found in the system.</p>
+          )}
+
+          {/* Display subsequent fetch errors if they occur */}
+          {errorAdminLeaves && adminLeavesPages && (
+            <div className="mt-4">
+              <ErrorDisplay message={`Error loading more requests: ${getApiErrorMessage(errorAdminLeaves)}`} />
             </div>
-             {/* Handle case where there are truly zero requests overall */}
-             {allAdminLeaves.length === 0 && !isLoadingAdminLeaves && !errorAdminLeaves && (
-                  <p className="text-center py-8 text-base-content/70 italic">No leave requests found in the system.</p>
-             )}
-             {/* Display subsequent fetch errors if they occur */}
-             {errorAdminLeaves && adminLeavesPages && (
-                 <div className="mt-4">
-                     <ErrorDisplay message={`Error loading more requests: ${getApiErrorMessage(errorAdminLeaves)}`} />
-                 </div>
-             )}
+          )}
         </div>
       </div>
     </div>

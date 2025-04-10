@@ -48,7 +48,7 @@ export const LeaveList = ({
     <div>
       {/* Filter Tabs */}
       {showTabs && (
-          <div role="tablist" className="tabs tabs-boxed mb-6 bg-base-200/50 p-1">
+          <div role="tablist" className="tabs tabs-box mb-6 bg-base-200 p-1">
             {/* Use client-side calculated counts */}
             <button
               role="tab"

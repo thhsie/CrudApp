@@ -110,7 +110,7 @@ export const Dashboard = () => {
        )}
 
       {/* Stats Section */}
-      <div className="stats stats-vertical lg:stats-horizontal shadow-md w-full bg-base-100 border border-base-300/50 rounded-lg overflow-hidden">
+      <div className="stats stats-vertical lg:stats-horizontal w-full bg-base-100 border border-base-300 overflow-hidden">
         <div className="stat">
           <div className="stat-title text-base-content/70">Total Requests</div>
           {/* Show loading dots only during initial load */}
@@ -142,7 +142,7 @@ export const Dashboard = () => {
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
 
         {/* Recent Leaves Section */}
-        <div className="lg:col-span-2 card bg-base-100 shadow-lg border border-base-300/50">
+        <div className="lg:col-span-2 card bg-base-100  border border-base-300">
             <div className="card-body">
             <div className="flex justify-between items-center mb-4">
                  <h2 className="card-title">Recent Leave Requests</h2>
@@ -178,7 +178,7 @@ export const Dashboard = () => {
         </div>
 
         {/* Quick Actions Section */}
-        <div className="lg:col-span-1 card bg-base-100 shadow-lg border border-base-300/50">
+        <div className="lg:col-span-1 card bg-base-100 border border-base-300">
             <div className="card-body">
             <h2 className="card-title mb-4">Quick Actions</h2>
             <div className="flex flex-col gap-3">

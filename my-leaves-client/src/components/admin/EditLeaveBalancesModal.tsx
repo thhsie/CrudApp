@@ -118,13 +118,13 @@ export const EditLeaveBalancesModal = ({
     // Use the native <dialog> element with DaisyUI's 'modal' class
     <dialog ref={modalRef} id={`edit_balances_modal_${user.id}`} className="modal modal-bottom sm:modal-middle">
       {/* Modal Box Content */}
-      <div className="modal-box">
+      <div className="modal-box pl-8">
         {/* Close button (positioned absolute) - triggers onClose via useEffect */}
-        <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={handleCancelClick} type="button" disabled={isSaving}>✕</button>
+        <button className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4" onClick={handleCancelClick} type="button" disabled={isSaving}>✕</button>
 
-        <h3 className="font-bold text-lg mb-1">Edit Leave Balances</h3>
+        <h3 className="font-bold text-lg mb-1">Readjust balances</h3>
         <p className="text-sm text-base-content/70 mb-4 truncate" title={user.email ?? user.userName ?? `User ID: ${user.id}`}>
-            For: {user.email || user.userName || `User ID: ${user.id}`}
+            for: {user.email || user.userName || `User ID: ${user.id}`}
         </p>
 
         {/* Form for editing balances */}
@@ -134,7 +134,7 @@ export const EditLeaveBalancesModal = ({
 
           {/* Input field for Annual Leaves (using DaisyUI label structure) */}
            <label className="form-control w-full">
-              <div className="label"><span className="label-text">Annual Leave Balance</span></div>
+              <div className="label"><span className="label-text">Annual Leave balance</span></div>
               <input
                 type="number"
                 name="paidLeavesBalance" // Must match LeaveBalancesUpdateDto property
@@ -151,7 +151,7 @@ export const EditLeaveBalancesModal = ({
 
            {/* Input field for Sick Leaves */}
             <label className="form-control w-full">
-              <div className="label"><span className="label-text">Sick Leave Balance</span></div>
+              <div className="label"><span className="label-text">Sick Leave balance</span></div>
               <input
                 type="number"
                 name="sickLeavesBalance"
@@ -168,7 +168,7 @@ export const EditLeaveBalancesModal = ({
 
           {/* Input field for Special Leaves */}
             <label className="form-control w-full">
-               <div className="label"><span className="label-text">Special Leave Balance</span></div>
+               <div className="label"><span className="label-text">Special Leave balance</span></div>
                <input
                  type="number"
                  name="specialLeavesBalance"
