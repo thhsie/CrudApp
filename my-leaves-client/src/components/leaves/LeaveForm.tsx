@@ -193,7 +193,6 @@ export const LeaveForm = ({ onSubmit, isSubmitting }: LeaveFormProps) => {
               fixedWeeks
               modifiersClassNames={{
                 selected: 'rdp-day_selected_custom',
-                today: 'rdp-day_today_custom',
               }}
             />
           )}

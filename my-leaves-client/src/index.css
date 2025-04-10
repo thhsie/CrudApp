@@ -59,13 +59,10 @@ body {
 }
 
 .rdp-day_selected_custom {
-  background-color: #3b82f6; /* Blue for selected */
+  background-color: oklch(58% 0.158 241.966); /* Blue for selected */
   color: white;
 }
 
-.rdp-day_today_custom {
-  border: 1px solid #3b82f6; /* Border for today */
-}
 /* --- END HOVER EFFECT --- */
 
 /* Example: Custom scrollbar styling (optional) */
