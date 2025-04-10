@@ -160,9 +160,17 @@ export const LeaveManagement = () => {
         <div className="card-body p-5 md:p-6">
            <h2 className="card-title mb-4 text-lg">Leave History</h2>
 
-           {/* Pass the flattened list and delete handler */}
+           {/* Pass the response object and delete handler */}
            <LeaveList
-                leaves={allUserLeaves}
+                response={{
+                    data: allUserLeaves,
+                    totalCount: totalCount,
+                    pendingCount: userLeavesPages?.pages[0]?.pendingCount ?? 0,
+                    approvedCount: userLeavesPages?.pages[0]?.approvedCount ?? 0,
+                    rejectedCount: userLeavesPages?.pages[0]?.rejectedCount ?? 0,
+                    pageNumber: userLeavesPages?.pages.length ?? 1,
+                    pageSize: userLeavesPages?.pages[0]?.pageSize ?? allUserLeaves.length
+                }}
                 // Loading shown only initially or when empty
                 isLoading={isLoadingUserLeaves && !isFetchingNextPage && allUserLeaves.length === 0}
                 // Error shown only initially or when empty

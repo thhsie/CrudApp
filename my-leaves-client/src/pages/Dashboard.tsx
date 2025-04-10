@@ -154,10 +154,17 @@ export const Dashboard = () => {
                 )}
             </div>
 
-            {/* Pass only recent leaves */}
-            {/* Loading/Error only shown if initial fetch failed */}
+            {/* Pass the response object */}
             <LeaveList
-                leaves={recentLeaves}
+                response={{
+                    data: recentLeaves,
+                    totalCount: userLeavesFirstPage?.pages[0]?.totalCount ?? 0,
+                    pendingCount: userLeavesFirstPage?.pages[0]?.pendingCount ?? 0,
+                    approvedCount: userLeavesFirstPage?.pages[0]?.approvedCount ?? 0,
+                    rejectedCount: userLeavesFirstPage?.pages[0]?.rejectedCount ?? 0,
+                    pageNumber: userLeavesFirstPage?.pages.length ?? 1,
+                    pageSize: userLeavesFirstPage?.pages[0]?.pageSize ?? recentLeaves.length
+                }}
                 isLoading={false} // Initial load handled above
                 error={null}     // Initial error handled above
                 onDelete={handleDelete} // Pass delete handler

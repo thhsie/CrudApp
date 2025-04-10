@@ -13,7 +13,7 @@ export const Sidebar = () => {
 
   // Helper for NavLink classes
   const getNavLinkClass = ({ isActive }: { isActive: boolean }): string => {
-    const baseClasses = "flex items-center gap-3 p-2 rounded-lg transition-colors duration-150 hover:bg-base-300";
+    const baseClasses = "flex items-center gap-3 p-2 rounded-lg transition-colors duration-150 ";
     const activeClasses = "bg-primary text-primary-content";
     return `${baseClasses} ${isActive ? activeClasses : ''}`;
   };

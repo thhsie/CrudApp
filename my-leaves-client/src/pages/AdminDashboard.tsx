@@ -162,7 +162,15 @@ export const AdminDashboard = () => {
           <h2 className="card-title mb-4 text-lg">All Leave Requests ({counts.total})</h2>
 
            <LeaveList
-                leaves={allAdminLeaves} // Pass the flattened list
+                response={{
+                    data: allAdminLeaves,
+                    totalCount: adminLeavesPages?.pages[0]?.totalCount ?? 0,
+                    pendingCount: adminLeavesPages?.pages[0]?.pendingCount ?? 0,
+                    approvedCount: adminLeavesPages?.pages[0]?.approvedCount ?? 0,
+                    rejectedCount: adminLeavesPages?.pages[0]?.rejectedCount ?? 0,
+                    pageNumber: adminLeavesPages?.pages.length ?? 1,
+                    pageSize: adminLeavesPages?.pages[0]?.pageSize ?? allAdminLeaves.length
+                }}
                 // Loading/Error handled above for initial load
                 isLoading={false}
                 error={null}
