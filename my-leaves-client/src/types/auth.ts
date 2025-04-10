@@ -1,9 +1,13 @@
+/* =============================================
+   1. src/types/auth.ts
+   ============================================= */
+
 /** Basic user information derived from the authentication context */
 export interface User {
-    id: string; // User's unique identifier (GUID from backend, or email as fallback)
-    email: string; // User's email
+    id: string;
+    email: string;
     isAdmin: boolean;
-    //roles: string[]; // Roles like "Admin", "Standard"
+    leaveBalances?: LeaveBalances;
   }
 
 /** Data required for standard login via BFF */
@@ -26,9 +30,9 @@ export interface AuthResponse {
 
 /** Information sent to the API for external login token exchange */
 export interface ExternalUserInfo {
-    username: string; // Usually email or name from provider
-    providerKey: string; // The protected user ID from the provider
-    email?: string | null; // Optional email
+    username: string;
+    providerKey: string;
+    email?: string | null;
 }
 
 /** DTO for the API's token response */
@@ -37,4 +41,40 @@ export interface AccessTokenResponse {
     accessToken: string;
     expiresIn: number;
     refreshToken: string;
+}
+
+// --- Updated/New TYPES ---
+
+/** Structure of leave balances (matches backend LeaveBalancesDto) */
+export interface LeaveBalances {
+    annualLeavesBalance: number;
+    sickLeavesBalance: number;
+    specialLeavesBalance: number;
+}
+
+/** DTO for updating leave balances via API (matches backend LeaveBalancesUpdateRequest) */
+export interface LeaveBalancesUpdateDto {
+    paidLeavesBalance: number; // Matches backend property name
+    sickLeavesBalance: number;
+    specialLeavesBalance: number;
+}
+
+/** DTO representing a user in the admin list (matches backend UserListItemDto) */
+export interface UserListItem {
+    id: string;
+    email: string | null;
+    userName: string | null;
+    leaveBalances: LeaveBalances | null; // Use the LeaveBalances interface
+}
+
+/** Structure for the paginated user response (matches backend PaginatedResponse<UserListItemDto>) */
+export interface PaginatedUserResponse {
+    data: UserListItem[];
+    totalCount: number;
+    // Backend might send these, even if 0 for users. Match the backend structure.
+    pendingCount: number; // Or remove if backend doesn't send for users
+    approvedCount: number;// Or remove if backend doesn't send for users
+    rejectedCount: number;// Or remove if backend doesn't send for users
+    pageNumber: number;
+    pageSize: number;
 }

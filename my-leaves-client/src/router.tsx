@@ -1,23 +1,22 @@
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
-import { Login, Register } from './pages/Login'; // Assuming Register is exported from Login.tsx
+import { Login, Register } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { LeaveManagement } from './pages/LeaveManagement';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { AdminUsers } from './pages/AdminUsers';
 import { NotFound } from './pages/NotFound';
 import { useAuth } from './contexts/AuthContext';
 import { Layout } from './components/layout/Layout';
 import { Loading } from './components/ui/Loading';
 import { JSX } from 'react';
+import Profile from './pages/Profile';
 
-// Protected route component - Consumes updated useAuth hook
 const ProtectedRoute = ({ children, adminOnly = false }: { children: JSX.Element, adminOnly?: boolean }) => {
-  // These values now come from useAuthQuery via AuthContext
   const { isAuthenticated, isAdmin, loading } = useAuth();
 
   if (loading) {
-    // Show loading indicator (consistent with previous behavior)
      return (
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center min-h-screen bg-base-200">
             <Loading size="lg"/>
         </div>
     );
@@ -25,47 +24,44 @@ const ProtectedRoute = ({ children, adminOnly = false }: { children: JSX.Element
 
   if (!isAuthenticated) {
     console.log('ProtectedRoute: Not authenticated, redirecting to login.');
-    // Redirect to login, potentially preserving the intended destination
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    const currentPath = window.location.pathname + window.location.search;
+    return <Navigate to="/login" state={{ from: currentPath }} replace />;
   }
 
   if (adminOnly && !isAdmin) {
     console.log('ProtectedRoute: Not admin, redirecting to dashboard.');
-    // Redirect non-admins trying to access admin routes
     return <Navigate to="/dashboard" replace />;
   }
 
-  // console.log(`ProtectedRoute: Access granted. IsAdmin: ${isAdmin}, AdminOnly: ${adminOnly}`);
-  return children; // Render the protected content
+  return children;
 };
 
-// Admin route component remains the same
 const AdminRoute = ({ children }: { children: JSX.Element }) => (
   <ProtectedRoute adminOnly>{children}</ProtectedRoute>
 );
 
-// Layout wrapper remains the same
 const AppLayout = () => (
     <Layout>
         <Outlet /> {/* Nested routes will render here */}
     </Layout>
 );
 
+// Router Definition
 export const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />,
   },
   {
-     path: '/register', // Add register route
+     path: '/register',
      element: <Register />,
   },
   {
     path: '/',
-    element: <ProtectedRoute><AppLayout /></ProtectedRoute>, // Routes within AppLayout are protected
+    element: <ProtectedRoute><AppLayout /></ProtectedRoute>,
     children: [
       {
-        index: true,
+        index: true, // Default route redirects to dashboard
         element: <Navigate to="/dashboard" replace />,
       },
       {
@@ -73,37 +69,42 @@ export const router = createBrowserRouter([
         element: <Dashboard />,
       },
       {
-        path: 'user/leaves', // Renamed for clarity, matches link in Dashboard
+        path: 'user/leaves', // User's leave management
         element: <LeaveManagement />,
       },
       {
         // Temporary placeholder profile route
         path: 'profile',
-        element: <div>Profile Page Placeholder</div>
+        element: <Profile />
       },
+      // Admin Section
       {
         path: 'admin',
-        element: <AdminRoute><Outlet /></AdminRoute>,
+        element: <AdminRoute><Outlet /></AdminRoute>, // Protect all admin routes
         children: [
              {
-                index: true, // Default route for '/admin'
+                index: true, // Default route for '/admin' -> admin dashboard
                 element: <Navigate to="dashboard" replace />,
             },
+            // {
+            //     path: 'dashboard', // Admin Overview
+            //     element: <AdminDashboard />,
+            // },
             {
-                path: 'dashboard',
+                path: 'leaves', // Manage All Leaves
                 element: <AdminDashboard />,
             },
             {
-                path: 'leaves',
-                element: <AdminDashboard />, // Reuse AdminDashboard or create specific AdminLeaveList page
-            },
-            // Add other admin routes here (e.g., /admin/users)
+                path: 'users',
+                element: <AdminUsers />,
+            }
+            // Add other admin routes here (e.g., /admin/settings)
         ]
       }
     ],
   },
   {
-    path: '*', // Catch-all route
+    path: '*', // Catch-all route for 404
     element: <NotFound />,
   },
 ]);

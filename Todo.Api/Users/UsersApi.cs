@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TodoApi.Shared;
 
 namespace TodoApi;
 
@@ -102,7 +104,57 @@ public static class UsersApi
                 currentUser.Id,
                 currentUser.User?.Email,
                 currentUser.IsAdmin,
+                currentUser.User.LeaveBalances,
             });
+        }).RequireAuthorization(pb => pb.RequireCurrentUser());
+
+        group.MapGet("/all", async Task<Results<Ok<PaginatedResponse<UserListItemDto>>, UnauthorizedHttpResult>> (
+            TodoDbContext db,
+            CurrentUser currentUser,
+            [AsParameters] PaginationRequest pagination) =>
+        {
+            if (!currentUser.IsAdmin)
+            {
+                return TypedResults.Unauthorized();
+            }
+
+            var query = db.Users.Include(u => u.LeaveBalances).AsNoTracking(); // Include balances
+
+            var totalCount = await query.CountAsync();
+
+            var users = await query
+                .OrderBy(u => u.Email) // Or UserName
+                .Skip((pagination.PageNumber - 1) * pagination.PageSize)
+                .Take(pagination.PageSize)
+                .Select(u => new UserListItemDto
+                {
+                    Id = u.Id,
+                    Email = u.Email,
+                    UserName = u.UserName,
+                    LeaveBalances = u.LeaveBalances != null ? new LeaveBalancesDto // Map owned entity to a DTO
+                    {
+                        AnnualLeavesBalance = u.LeaveBalances.AnnualLeavesBalance,
+                        SickLeavesBalance = u.LeaveBalances.SickLeavesBalance,
+                        SpecialLeavesBalance = u.LeaveBalances.SpecialLeavesBalance
+                    } : null
+                })
+                .ToListAsync();
+
+            var response = new PaginatedResponse<UserListItemDto>
+            {
+                Data = users,
+                TotalCount = totalCount,
+                // These counts aren't relevant for users, set to 0 or remove from PaginatedResponse if possible,
+                // otherwise, just populate Data, TotalCount, PageNumber, PageSize.
+                PendingCount = 0,
+                ApprovedCount = 0,
+                RejectedCount = 0,
+                PageNumber = pagination.PageNumber,
+                PageSize = pagination.PageSize
+            };
+
+            return TypedResults.Ok(response);
+
         }).RequireAuthorization(pb => pb.RequireCurrentUser());
 
         return group;

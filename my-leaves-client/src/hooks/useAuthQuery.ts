@@ -1,7 +1,16 @@
-import { useMutation, useQuery, useQueryClient, UseQueryResult } from '@tanstack/react-query';
+/* =============================================
+   4. src/hooks/useAuthQuery.ts
+   ============================================= */
+import { useMutation, useQuery, useQueryClient, UseQueryResult, useInfiniteQuery, InfiniteData } from '@tanstack/react-query';
 import { authService } from '../services/authService';
-import { LoginDto, RegisterDto, User } from '../types/auth';
+import { LoginDto, RegisterDto, User, LeaveBalancesUpdateDto, PaginatedUserResponse } from '../types/auth';
 import { authKeys } from './authKeys';
+// Removed toast import
+
+// Define a type for feedback state (used by components)
+export type Feedback = { type: 'success' | 'error'; message: string } | null;
+
+const ADMIN_USERS_PAGE_SIZE = 10;
 
 export const useAuthQuery = () => {
   const queryClient = useQueryClient();
@@ -11,30 +20,49 @@ export const useAuthQuery = () => {
     data: currentUser,
     isLoading: isLoadingUser,
     error: errorUser,
-    refetch: refetchUser, // Keep refetch if manual refresh is needed
+    refetch: refetchUser,
   }: UseQueryResult<User | null, Error> = useQuery({
-    queryKey: authKeys.currentUser(),
-    queryFn: authService.fetchCurrentUser,
-    // Configuration:
-    staleTime: 5 * 60 * 1000, // Cache user data for 5 minutes
-    gcTime: 15 * 60 * 1000,  // Keep data longer in cache even if inactive
-    retry: 1,               // Retry once on error (useful for network hiccups)
-    refetchOnWindowFocus: true, // Keep session fresh when user returns
+        queryKey: authKeys.currentUser(),
+        queryFn: authService.fetchCurrentUser,
+        staleTime: 5 * 60 * 1000,
+        gcTime: 15 * 60 * 1000,
+        retry: 1,
+        refetchOnWindowFocus: true,
   });
+
+  // --- Query: Get Admin Users (Infinite) ---
+   const useAdminUsersInfinite = (isAdmin: boolean, pageSize: number = ADMIN_USERS_PAGE_SIZE) => {
+       return useInfiniteQuery<
+           PaginatedUserResponse,
+           Error,
+           InfiniteData<PaginatedUserResponse>,
+           readonly (string | number | { pageSize: number })[], // QueryKey type
+           number // PageParam type
+       >({
+           queryKey: authKeys.adminUsers(pageSize), // Use the specific key
+           queryFn: ({ pageParam = 1 }) => authService.getAdminUsers(pageParam, pageSize), // Call service
+           initialPageParam: 1,
+           getNextPageParam: (lastPage) => {
+               const totalPages = Math.ceil(lastPage.totalCount / pageSize);
+               return lastPage.pageNumber < totalPages ? lastPage.pageNumber + 1 : undefined;
+           },
+           enabled: isAdmin, // Only run if user is admin
+           staleTime: 2 * 60 * 1000, // Cache admin user list for 2 minutes
+           gcTime: 10 * 60 * 1000,
+       });
+   };
 
   // --- Mutation: Login ---
   const loginMutation = useMutation({
     mutationFn: (loginData: LoginDto) => authService.login(loginData),
     onSuccess: (user) => {
-      // Update the currentUser query cache immediately after successful login
       queryClient.setQueryData(authKeys.currentUser(), user);
+      // Component should handle success feedback
       console.log('Login successful, user cache updated.');
-      // Invalidation is also an option if you prefer a refetch:
-      // queryClient.invalidateQueries({ queryKey: authKeys.currentUser() });
     },
     onError: (error) => {
+      // Component should handle error feedback using errorLogin state
       console.error('Login failed:', error);
-      // Ensure cache reflects logged-out state on failure
       queryClient.setQueryData(authKeys.currentUser(), null);
     },
   });
@@ -43,43 +71,64 @@ export const useAuthQuery = () => {
   const logoutMutation = useMutation({
     mutationFn: () => authService.logout(),
     onSuccess: () => {
-      // Clear the user data from the cache
       queryClient.setQueryData(authKeys.currentUser(), null);
-      // Optional: Remove query entirely or reset other related queries if needed
-      // queryClient.removeQueries({ queryKey: authKeys.currentUser() });
+      // Clear admin-specific data too
+      queryClient.removeQueries({ queryKey: authKeys.adminUsers(ADMIN_USERS_PAGE_SIZE) });
+      queryClient.removeQueries({ queryKey: ['leaves'] }); // Clear leaves too
+      // Component should handle success feedback if needed
       console.log('Logout successful, user cache cleared.');
-      // Redirect logic can be handled here or in the component calling logout
+      // Redirect (kept from previous logic)
+       window.location.href = '/login?loggedOut=true';
     },
     onError: (error) => {
+       // Component should handle error feedback using errorLogout state
        console.error('Logout failed:', error);
-       // Still clear cache as a safety measure?
-       // queryClient.setQueryData(authKeys.currentUser(), null);
     }
   });
 
   // --- Mutation: Register ---
   const registerMutation = useMutation({
     mutationFn: (registerData: RegisterDto) => authService.register(registerData),
-    // No direct cache update needed, registration doesn't log in
     onSuccess: () => {
+      // Component should handle success feedback and navigation
       console.log('Registration successful.');
-      // Maybe navigate to login page with a success message?
     },
      onError: (error) => {
+       // Component should handle error feedback using errorRegister state
        console.error('Registration failed:', error);
     }
   });
 
+  // --- Mutation: Update User Leave Balances (Admin) ---
+  const updateLeaveBalancesMutation = useMutation<
+      void, // Return type
+      Error, // Error type
+      { userId: string; balances: LeaveBalancesUpdateDto }, // Variables type
+      unknown // Context type
+    >({
+      mutationFn: ({ userId, balances }) => authService.updateUserLeaveBalances(userId, balances),
+      onSuccess: (_, variables) => {
+          // Invalidate the users list to refetch updated data
+          queryClient.invalidateQueries({ queryKey: authKeys.adminUsers(ADMIN_USERS_PAGE_SIZE) });
+          console.log(`Leave balances updated for user ${variables.userId}`);
+          // Success feedback handled by calling component
+      },
+      onError: (error, variables) => {
+          console.error(`Failed to update leave balances for user ${variables.userId}:`, error);
+          // Error feedback handled by calling component using errorUpdatingBalances state
+      },
+  });
+
+
   // --- Optional Query: Get User Roles ---
-  // Example: Could be used in an admin section
-  const useUserRoles = (email?: string) => {
-    return useQuery({
-        queryKey: authKeys.roles(email),
-        queryFn: () => email ? authService.fetchUserRoles(email) : Promise.resolve([]),
-        enabled: !!email, // Only fetch if email is provided
-        staleTime: 10 * 60 * 1000, // Cache roles for 10 mins
-    });
-  }
+  // const useUserRoles = (email?: string) => {
+  //   return useQuery({
+  //       queryKey: authKeys.roles(email),
+  //       queryFn: () => email ? authService.fetchUserRoles(email) : Promise.resolve([]),
+  //       enabled: !!email,
+  //       staleTime: 10 * 60 * 1000,
+  //   });
+  // };
 
 
   // --- Return values ---
@@ -92,25 +141,29 @@ export const useAuthQuery = () => {
     isAdmin: !!currentUser?.isAdmin,
     refetchUser,
 
-    // Login Mutation
+    // Login Mutation (expose error/loading for component feedback)
     login: loginMutation.mutate,
     loginAsync: loginMutation.mutateAsync,
     isLoggingIn: loginMutation.isPending,
     errorLogin: loginMutation.error,
 
-    // Logout Mutation
+    // Logout Mutation (expose error/loading)
     logout: logoutMutation.mutate,
     logoutAsync: logoutMutation.mutateAsync,
     isLoggingOut: logoutMutation.isPending,
     errorLogout: logoutMutation.error,
 
-    // Register Mutation
+    // Register Mutation (expose error/loading)
     register: registerMutation.mutate,
     registerAsync: registerMutation.mutateAsync,
     isRegistering: registerMutation.isPending,
     errorRegister: registerMutation.error,
 
-    // Example Roles Query Hook (expose if needed)
-    // useUserRoles,
+    // --- Admin Specific ---
+    useAdminUsersInfinite, // Hook for infinite admin users
+    updateLeaveBalances: updateLeaveBalancesMutation.mutate, // Expose mutate
+    updateLeaveBalancesAsync: updateLeaveBalancesMutation.mutateAsync, // Expose async version
+    isUpdatingBalances: updateLeaveBalancesMutation.isPending,
+    errorUpdatingBalances: updateLeaveBalancesMutation.error, // Expose error state
   };
 };

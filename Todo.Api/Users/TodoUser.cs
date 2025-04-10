@@ -17,32 +17,32 @@ public class TodoUser : IdentityUser
 
     public void IncreaseAnnualLeaves(int amount)
     {
-        LeaveBalances = LeaveBalances.IncreaseAnnualLeaves(amount);
+        LeaveBalances.IncreaseAnnualLeaves(amount);
     }
 
-    public void DecreaseAnnualLeaves(int amount)
+    public bool DecreaseAnnualLeaves(int amount)
     {
-        LeaveBalances = LeaveBalances.DecreaseAnnualLeaves(amount);
+        return LeaveBalances.DecreaseAnnualLeaves(amount);
     }
 
     public void IncreaseSickLeaves(int amount)
     {
-        LeaveBalances = LeaveBalances.IncreaseSickLeaves(amount);
+        LeaveBalances.IncreaseSickLeaves(amount);
     }
 
-    public void DecreaseSickLeaves(int amount)
+    public bool DecreaseSickLeaves(int amount)
     {
-        LeaveBalances = LeaveBalances.DecreaseSickLeaves(amount);
+        return LeaveBalances.DecreaseSickLeaves(amount);
     }
 
     public void IncreaseSpecialLeaves(int amount)
     {
-        LeaveBalances = LeaveBalances.IncreaseSpecialLeaves(amount);
+        LeaveBalances.IncreaseSpecialLeaves(amount);
     }
 
-    public void DecreaseSpecialLeaves(int amount)
+    public bool DecreaseSpecialLeaves(int amount)
     {
-        LeaveBalances = LeaveBalances.DecreaseSpecialLeaves(amount);
+        return LeaveBalances.DecreaseSpecialLeaves(amount);
     }
 
     public bool HasSufficientLeaveBalance(int leaveType, int days)
@@ -94,4 +94,18 @@ public class UserRole
 
     [Required]
     public string Role { get; set; } = default!;
+}
+
+public class LeaveBalancesDto // DTO for owned entity
+{
+    public int AnnualLeavesBalance { get; set; }
+    public int SickLeavesBalance { get; set; }
+    public int SpecialLeavesBalance { get; set; }
+}
+public class UserListItemDto
+{
+    public required string Id { get; set; }
+    public string? Email { get; set; }
+    public string? UserName { get; set; }
+    public LeaveBalancesDto? LeaveBalances { get; set; } // Use the DTO
 }

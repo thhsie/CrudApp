@@ -13,7 +13,7 @@ export const Navbar = () => {
   }
 
   return (
-    <div className="navbar sticky top-0 z-30 bg-base-100/70 backdrop-blur-lg border-b border-base-300 shadow-sm">
+    <div className="navbar sticky top-0 z-30 bg-base-100/70 backdrop-blur-lg border-b border-base-300">
       {/* Left Section */}
       <div className="navbar-start">
         <label htmlFor="my-drawer" aria-label="open sidebar" className="btn btn-square btn-ghost lg:hidden">
@@ -30,13 +30,13 @@ export const Navbar = () => {
         {isAuthenticated && user ? (
           <div className="dropdown dropdown-end">
             <label tabIndex={0} className="btn btn-ghost btn-circle avatar placeholder">
-              <div className="bg-neutral text-neutral-content rounded-full w-10">
+              <div className="bg-secondary text-neutral-content rounded-full w-10 flex justify-center items-center text-xl pt-0.75">
                 {user?.email ? user.email[0].toUpperCase() : '?'}
               </div>
             </label>
             <ul
               tabIndex={0}
-              className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-200 rounded-box w-52"
+            className="menu menu-sm dropdown-content mt-3 z-[1] p-4 shadow bg-base-200 rounded-box w-52"
             >
               <li className="menu-title px-4 pt-2 pb-1">
                  <span>{user.email}</span>

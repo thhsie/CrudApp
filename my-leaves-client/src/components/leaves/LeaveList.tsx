@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { Leave, LeaveStatus } from '../../types/leave';
-import { LeaveCard } from './LeaveCard'; // Assuming LeaveCard is in the same directory or imported correctly
+import { useState } from 'react';
+import { LeaveStatus, PaginatedLeaveResponse } from '../../types/leave';
+import { LeaveCard } from './LeaveCard';
 import { Loading } from '../ui/Loading';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface LeaveListProps {
-  leaves: Leave[]; // This will be the potentially flattened list from infinite queries
-  isLoading: boolean; // Overall loading state from parent (initial load)
-  error: Error | null; // Overall error state from parent (initial load)
+  response: PaginatedLeaveResponse;
+  isLoading: boolean;
+  error: Error | null;
   onApprove?: (id: number) => void;
   onReject?: (id: number) => void;
   onDelete?: (id: number) => void;
@@ -18,7 +18,7 @@ interface LeaveListProps {
 }
 
 export const LeaveList = ({
-  leaves,
+  response,
   isLoading,
   error,
   onApprove,
@@ -32,25 +32,23 @@ export const LeaveList = ({
   const { isAdmin } = useAuth();
 
   const filteredLeaves = filter === 'all'
-    ? leaves
-    : leaves.filter(leave => leave.status === filter);
+    ? response.data
+    : response.data.filter(leave => leave.status === filter);
 
-  // *** UPDATED: Calculate counts client-side based on the *full* list passed in ***
-  const counts = React.useMemo(() => ({
-      all: leaves.length,
-      [LeaveStatus.Pending]: leaves.filter(l => l.status === LeaveStatus.Pending).length,
-      [LeaveStatus.Approved]: leaves.filter(l => l.status === LeaveStatus.Approved).length,
-      [LeaveStatus.Rejected]: leaves.filter(l => l.status === LeaveStatus.Rejected).length,
-  }), [leaves]); // Recalculate whenever the leaves list changes
+  const counts = {
+    all: response.totalCount,
+    [LeaveStatus.Pending]: response.pendingCount,
+    [LeaveStatus.Approved]: response.approvedCount,
+    [LeaveStatus.Rejected]: response.rejectedCount,
+  };
 
-  // Show tabs only if there's data and not in initial loading state
-  const showTabs = !isLoading && leaves.length > 0;
+  const showTabs = !isLoading && response.data.length > 0;
 
   return (
     <div>
       {/* Filter Tabs */}
       {showTabs && (
-          <div role="tablist" className="tabs tabs-boxed mb-6 bg-base-200/50 p-1">
+          <div role="tablist" className="tabs tabs-box mb-6 bg-base-200 p-1">
             {/* Use client-side calculated counts */}
             <button
               role="tab"
@@ -94,7 +92,7 @@ export const LeaveList = ({
             <Loading />
         ) : error ? (
             <ErrorDisplay message={error.message || "Failed to load leaves."} />
-        ) : leaves.length === 0 ? (
+        ) : response.data.length === 0 ? (
              // Message if no leaves exist at all (after initial load)
              // This is now handled by the parent component usually (Dashboard/LeaveManagement)
              // Keep a fallback here just in case.

@@ -69,8 +69,8 @@ export const LeaveCard = ({
 
   return (
     <> {/* Use Fragment */}
-      <div className="card card-bordered bg-base-100 shadow-sm mb-4"> {/* Use card-bordered, shadow-sm */}
-        <div className="card-body p-4 md:p-5"> {/* Slightly reduced padding */}
+      <div className="card card-bordered bg-base-200 shadow-lg mb-5"> {/* Use card-bordered, shadow-sm */}
+        <div className="card-body p-4 md:p-10"> {/* Slightly reduced padding */}
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
             <h2 className="card-title text-lg font-semibold mb-1 sm:mb-0"> {/* Adjusted title size/weight */}
@@ -101,7 +101,7 @@ export const LeaveCard = ({
 
           {/* Actions */}
           {(isAdmin || canDelete) && ( // Only show actions div if there are actions
-            <div className="card-actions justify-end items-center mt-3 pt-3 border-t border-base-200 space-x-2"> {/* Added border-top */}
+            <div className="card-actions justify-end items-center mt-3 pt-5 border-t border-base-300 space-x-2"> {/* Added border-top */}
               {/* Admin Actions */}
               {isAdmin && isPending && onApprove && onReject && (
                 <>

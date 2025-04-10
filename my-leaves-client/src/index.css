@@ -2,8 +2,44 @@
 
 /* Basic daisyUI Plugin with default light/dark themes */
 @plugin "daisyui" {
-  themes: light --default, dark --prefersdark;
+  themes: corporate --default;
   logs: false; /* Disable daisyUI logs in production builds */
+}
+
+
+@plugin "daisyui/theme" {
+  name: "corporate";
+  default: true;
+  prefersdark: true;
+  color-scheme: "light";
+  --color-base-100: oklch(100% 0 0);
+  --color-base-200: oklch(93% 0 0);
+  --color-base-300: oklch(86% 0 0);
+  --color-base-content: oklch(22.389% 0.031 278.072);
+  --color-primary: oklch(58% 0.158 241.966);
+  --color-primary-content: oklch(100% 0 0);
+  --color-secondary: oklch(55% 0.046 257.417);
+  --color-secondary-content: oklch(100% 0 0);
+  --color-accent: oklch(60% 0.118 184.704);
+  --color-accent-content: oklch(100% 0 0);
+  --color-neutral: oklch(0% 0 0);
+  --color-neutral-content: oklch(100% 0 0);
+  --color-info: oklch(60% 0.126 221.723);
+  --color-info-content: oklch(100% 0 0);
+  --color-success: oklch(62% 0.194 149.214);
+  --color-success-content: oklch(100% 0 0);
+  --color-warning: oklch(85% 0.199 91.936);
+  --color-warning-content: oklch(0% 0 0);
+  --color-error: oklch(70% 0.191 22.216);
+  --color-error-content: oklch(0% 0 0);
+  --radius-selector: 1rem;
+  --radius-field: 2rem;
+  --radius-box: 2rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 2px;
+  --depth: 1;
+  --noise: 1;
 }
 
 
@@ -21,6 +57,12 @@ body {
   /* Using base-300 provides a slight elevation effect */
   @apply bg-base-300 rounded; /* Added rounded for better visuals */
 }
+
+.rdp-day_selected_custom {
+  background-color: oklch(58% 0.158 241.966); /* Blue for selected */
+  color: white;
+}
+
 /* --- END HOVER EFFECT --- */
 
 /* Example: Custom scrollbar styling (optional) */

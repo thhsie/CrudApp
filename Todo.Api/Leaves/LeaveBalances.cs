@@ -2,62 +2,63 @@ using System.ComponentModel.DataAnnotations;
 
 public class LeaveBalances
 {
-    public LeaveBalances(int paidLeavesBalance, int sickLeavesBalance, int specialLeavesBalance)
+    public LeaveBalances(int annualLeavesBalance, int sickLeavesBalance, int specialLeavesBalance)
     {
-        AnnualLeavesBalance = paidLeavesBalance;
+        AnnualLeavesBalance = annualLeavesBalance;
         SickLeavesBalance = sickLeavesBalance;
         SpecialLeavesBalance = specialLeavesBalance;
     }
 
     public LeaveBalances() : this(0, 0, 0) { }
 
-    public int AnnualLeavesBalance { get; }
-    public int SickLeavesBalance { get; }
-    public int SpecialLeavesBalance { get; }
+    // Changed to auto-properties with getters and setters
+    public int AnnualLeavesBalance { get; set; }
+    public int SickLeavesBalance { get; set; }
+    public int SpecialLeavesBalance { get; set; }
 
-    public LeaveBalances IncreaseAnnualLeaves(int amount)
+    public void IncreaseAnnualLeaves(int amount)
     {
-        return new LeaveBalances(AnnualLeavesBalance + amount, SickLeavesBalance, SpecialLeavesBalance);
+        AnnualLeavesBalance += amount;
     }
 
-    public LeaveBalances DecreaseAnnualLeaves(int amount)
+    public bool DecreaseAnnualLeaves(int amount)
     {
         if (amount > AnnualLeavesBalance)
         {
-            return this;
+            return false;
         }
-        int newBalance = AnnualLeavesBalance - amount;
-        return new LeaveBalances(newBalance, SickLeavesBalance, SpecialLeavesBalance);
+        AnnualLeavesBalance -= amount;
+        return true;
     }
 
-    public LeaveBalances IncreaseSickLeaves(int amount)
+    public void IncreaseSickLeaves(int amount)
     {
-        return new LeaveBalances(AnnualLeavesBalance, SickLeavesBalance + amount, SpecialLeavesBalance);
+        SickLeavesBalance += amount;
     }
 
-    public LeaveBalances DecreaseSickLeaves(int amount)
+    public bool DecreaseSickLeaves(int amount)
     {
         if (amount > SickLeavesBalance)
         {
-            return this;
+            return false;
         }
-        int newBalance = SickLeavesBalance - amount;
-        return new LeaveBalances(AnnualLeavesBalance, newBalance, SpecialLeavesBalance);
+        SickLeavesBalance -= amount;
+        return true;
     }
 
-    public LeaveBalances IncreaseSpecialLeaves(int amount)
+    public void IncreaseSpecialLeaves(int amount)
     {
-        return new LeaveBalances(AnnualLeavesBalance, SickLeavesBalance, SpecialLeavesBalance + amount);
+        SpecialLeavesBalance += amount;
     }
 
-    public LeaveBalances DecreaseSpecialLeaves(int amount)
+    public bool DecreaseSpecialLeaves(int amount)
     {
         if (amount > SpecialLeavesBalance)
         {
-            return this;
+            return false;
         }
-        int newBalance = SpecialLeavesBalance - amount;
-        return new LeaveBalances(AnnualLeavesBalance, SickLeavesBalance, newBalance);
+        SpecialLeavesBalance -= amount;
+        return true;
     }
 }
 
