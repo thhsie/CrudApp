@@ -18,23 +18,28 @@ public class Leave
             return false;
         }
 
-        var initialLeaveBalances = user.LeaveBalances;
+        bool balanceUpdated = false;
+        int leaveDays = CalculateLeaveDays();
+
         switch (Type)
         {
             case (int)LeaveType.Annual:
-                user.DecreaseAnnualLeaves(CalculateLeaveDays());
+                balanceUpdated = user.DecreaseAnnualLeaves(leaveDays);
                 break;
             case (int)LeaveType.Sick:
-                user.DecreaseSickLeaves(CalculateLeaveDays());
+                balanceUpdated = user.DecreaseSickLeaves(leaveDays);
                 break;
             case (int)LeaveType.Special:
-                user.DecreaseSpecialLeaves(CalculateLeaveDays());
+                balanceUpdated = user.DecreaseSpecialLeaves(leaveDays);
+                break;
+            case (int)LeaveType.Unpaid:
+                balanceUpdated = true; // No balance to check for unpaid leave
                 break;
         }
 
-        if (user.LeaveBalances == initialLeaveBalances)
+        if (!balanceUpdated)
         {
-            return false; // Leave balance was not decreased, likely due to insufficient balance
+            return false; // Insufficient balance
         }
 
         Status = LeaveStatus.Approved;
@@ -50,16 +55,18 @@ public class Leave
 
         if (Status == LeaveStatus.Approved)
         {
+            int leaveDays = CalculateLeaveDays();
+
             switch (Type)
             {
                 case (int)LeaveType.Annual:
-                    user.IncreaseAnnualLeaves(CalculateLeaveDays());
+                    user.IncreaseAnnualLeaves(leaveDays);
                     break;
                 case (int)LeaveType.Sick:
-                    user.IncreaseSickLeaves(CalculateLeaveDays());
+                    user.IncreaseSickLeaves(leaveDays);
                     break;
                 case (int)LeaveType.Special:
-                    user.IncreaseSpecialLeaves(CalculateLeaveDays());
+                    user.IncreaseSpecialLeaves(leaveDays);
                     break;
             }
         }

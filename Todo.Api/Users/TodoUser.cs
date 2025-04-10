@@ -17,32 +17,32 @@ public class TodoUser : IdentityUser
 
     public void IncreaseAnnualLeaves(int amount)
     {
-        LeaveBalances = LeaveBalances.IncreaseAnnualLeaves(amount);
+        LeaveBalances.IncreaseAnnualLeaves(amount);
     }
 
-    public void DecreaseAnnualLeaves(int amount)
+    public bool DecreaseAnnualLeaves(int amount)
     {
-        LeaveBalances = LeaveBalances.DecreaseAnnualLeaves(amount);
+        return LeaveBalances.DecreaseAnnualLeaves(amount);
     }
 
     public void IncreaseSickLeaves(int amount)
     {
-        LeaveBalances = LeaveBalances.IncreaseSickLeaves(amount);
+        LeaveBalances.IncreaseSickLeaves(amount);
     }
 
-    public void DecreaseSickLeaves(int amount)
+    public bool DecreaseSickLeaves(int amount)
     {
-        LeaveBalances = LeaveBalances.DecreaseSickLeaves(amount);
+        return LeaveBalances.DecreaseSickLeaves(amount);
     }
 
     public void IncreaseSpecialLeaves(int amount)
     {
-        LeaveBalances = LeaveBalances.IncreaseSpecialLeaves(amount);
+        LeaveBalances.IncreaseSpecialLeaves(amount);
     }
 
-    public void DecreaseSpecialLeaves(int amount)
+    public bool DecreaseSpecialLeaves(int amount)
     {
-        LeaveBalances = LeaveBalances.DecreaseSpecialLeaves(amount);
+        return LeaveBalances.DecreaseSpecialLeaves(amount);
     }
 
     public bool HasSufficientLeaveBalance(int leaveType, int days)
