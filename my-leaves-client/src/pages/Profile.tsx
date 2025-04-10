@@ -57,7 +57,7 @@ export const Profile = () => {
         <div className="card-body flex-col sm:flex-row items-center gap-4 md:gap-6">
            {/* Avatar Placeholder */}
            <div className="avatar placeholder">
-                <div className="bg-secondary text-neutral-content rounded-full flex justify-center items-center w-16 md:w-20">
+                <div className="bg-secondary text-neutral-content rounded-full flex justify-center items-center w-20 md:w-20">
                     <span className="flex items-center justify-center pt-3 font-bold text-5xl">{user.email ? user.email[0].toUpperCase() : '?'}</span>
                 </div>
             </div>
@@ -107,7 +107,7 @@ export const Profile = () => {
         <div className="card-body">
              <h2 className="card-title mb-4">Your Leave Request Statistics</h2>
               {/* Use stats component similar to dashboard */}
-               <div className="stats stats-vertical sm:stats-horizontal shadow w-full">
+               <div className="stats stats-vertical sm:stats-horizontal w-full">
                     <div className="stat">
                         <div className="stat-title">Total Submitted</div>
                          <div className="stat-value">{leaveStats.total}</div>
