@@ -21,6 +21,15 @@ body {
   /* Using base-300 provides a slight elevation effect */
   @apply bg-base-300 rounded; /* Added rounded for better visuals */
 }
+
+.rdp-day_selected_custom {
+  background-color: #3b82f6; /* Blue for selected */
+  color: white;
+}
+
+.rdp-day_today_custom {
+  border: 1px solid #3b82f6; /* Border for today */
+}
 /* --- END HOVER EFFECT --- */
 
 /* Example: Custom scrollbar styling (optional) */

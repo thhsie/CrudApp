@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { LeaveRequestData, LeaveType } from '../../types/leave';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
 import { DayPicker } from 'react-day-picker';
-import { format, isValid, parse } from 'date-fns';
+import { addDays, format, isValid, parse } from 'date-fns';
 import 'react-day-picker/dist/style.css';
 
 interface LeaveFormProps {
@@ -109,20 +109,19 @@ export const LeaveForm = ({ onSubmit, isSubmitting }: LeaveFormProps) => {
 
   return (
     <>
-        <form onSubmit={handleSubmit} className="space-y-6"> {/* Slightly increased spacing */}
+        <form onSubmit={handleSubmit} className="space-y-6">
         {error && <ErrorDisplay message={error} />}
 
         {/* --- Leave Type Radio Buttons --- */}
         <div className="form-control w-full">
             <label className="label"><span className="label-text">Leave Type</span></label>
-            {/* Use flex-wrap for responsiveness */}
             <div className="flex flex-wrap gap-x-6 gap-y-3 mt-1">
                 {leaveTypeOptions.map((option) => (
                     <label key={option.value} className="label cursor-pointer space-x-2">
                         <input
                             type="radio"
-                            name="type" // Same name groups them
-                            className="radio radio-primary" // DaisyUI radio styles
+                            name="type"
+                            className="radio radio-primary"
                             value={option.value}
                             checked={leaveRequest.type === option.value}
                             onChange={handleTypeChange}
@@ -133,12 +132,10 @@ export const LeaveForm = ({ onSubmit, isSubmitting }: LeaveFormProps) => {
                 ))}
             </div>
         </div>
-        {/* --- End Leave Type --- */}
-
 
         {/* Date Inputs using Modals and DayPicker */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-             {/* Start Date Trigger */}
+            {/* Start Date Trigger */}
             <label className="form-control w-full">
                 <div className="label"><span className="label-text">Start Date</span></div>
                 <button type="button" className="btn btn-outline border-base-300 justify-start font-normal w-full hover:bg-base-200 h-12" onClick={() => setOpenModal('start')} disabled={isSubmitting}>
@@ -167,14 +164,38 @@ export const LeaveForm = ({ onSubmit, isSubmitting }: LeaveFormProps) => {
         </div>
         </form>
 
-      {/* Modal for Date Picker (Remains the same) */}
+      {/* Modal for Date Picker */}
       <dialog ref={modalRef} id="date_picker_modal" className="modal">
         <div className="modal-box w-auto max-w-fit p-0">
           {openModal === 'start' && (
-            <DayPicker mode="single" selected={selectedStartDate} onSelect={handleDateSelectInModal} fromDate={today} className="react-day-picker m-4" showOutsideDays fixedWeeks modifiersClassNames={{ selected: 'rdp-day_selected_custom', today: 'rdp-day_today_custom' }}/>
+            <DayPicker
+              mode="single"
+              selected={selectedStartDate}
+              onSelect={handleDateSelectInModal}
+              //disabled ={{ before: today}}
+              className="react-day-picker m-4"
+              showOutsideDays
+              fixedWeeks
+              modifiersClassNames={{
+                selected: 'rdp-day_selected_custom',
+                today: 'rdp-day_today_custom',
+              }}
+            />
           )}
           {openModal === 'end' && (
-            <DayPicker mode="single" selected={selectedEndDate} onSelect={handleDateSelectInModal} fromDate={selectedStartDate || today} className="react-day-picker m-4" showOutsideDays fixedWeeks modifiersClassNames={{ selected: 'rdp-day_selected_custom', today: 'rdp-day_today_custom' }}/>
+            <DayPicker
+              mode="single"
+              selected={selectedEndDate}
+              onSelect={handleDateSelectInModal}
+              disabled={{ before: selectedStartDate ? addDays(selectedStartDate, 1) : today }}
+              className="react-day-picker m-4"
+              showOutsideDays
+              fixedWeeks
+              modifiersClassNames={{
+                selected: 'rdp-day_selected_custom',
+                today: 'rdp-day_today_custom',
+              }}
+            />
           )}
         </div>
         <form method="dialog" className="modal-backdrop">
