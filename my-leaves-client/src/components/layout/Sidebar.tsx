@@ -37,6 +37,15 @@ export const Sidebar = () => {
                 <FaLeaf className="text-primary text-2xl mr-2" /> MyLeaves
             </NavLink>
          </li>
+         {/* <li className="mb-4 mt-1 flex justify-center">
+          <NavLink to="/" aria-label="Go to homepage">
+            <img
+              src="/src/assets/logo.png"
+              alt="logo"
+              className="w-full max-w-[150px] object-contain"
+            />
+          </NavLink>
+        </li> */}
 
         {/* User Links */}
         <li><NavLink to="/dashboard" className={getNavLinkClass} end><FaTachometerAlt className="text-lg" />Dashboard</NavLink></li>
