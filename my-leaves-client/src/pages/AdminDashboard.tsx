@@ -4,16 +4,31 @@ import { useLeaves } from '../hooks/useLeaves';
 import { ErrorDisplay } from '../components/ui/ErrorDisplay';
 import { Feedback } from '../hooks/useAuthQuery';
 import { getApiErrorMessage } from '../services/authService';
-import { FaSearch, FaTimes } from 'react-icons/fa';
+import { FaSearch, FaTimes, FaList, FaTable } from 'react-icons/fa';
+import { LeaveTable } from '../components/leaves/LeaveTable';
+
 
 // Re-define or import FeedbackAlert component (assuming it exists)
 const FeedbackAlert = ({ feedback, onClose }: { feedback: Feedback | null; onClose: () => void }) => {
-    if (!feedback) return null;
-    const alertClass = feedback.type === 'success' ? 'alert-success' : 'alert-error';
+    // Moved useEffect outside conditional return
     useEffect(() => {
-        const timer = setTimeout(() => { onClose(); }, 5000);
-        return () => clearTimeout(timer);
-    }, [feedback, onClose]);
+        let timer: NodeJS.Timeout | undefined;
+        if (feedback) {
+            timer = setTimeout(() => {
+                onClose();
+            }, 5000);
+        }
+        // Cleanup function
+        return () => {
+            if (timer) {
+                clearTimeout(timer);
+            }
+        };
+    }, [feedback, onClose]); // Dependencies remain the same
+
+    if (!feedback) return null; // Conditional return is okay here
+
+    const alertClass = feedback.type === 'success' ? 'alert-success' : 'alert-error';
 
     return (
         <div className="toast toast-end toast-bottom z-50 p-4">
@@ -29,6 +44,7 @@ const FeedbackAlert = ({ feedback, onClose }: { feedback: Feedback | null; onClo
 
 export const AdminDashboard = () => {
   const [pageFeedback, setPageFeedback] = useState<Feedback | null>(null);
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('table'); // State for view mode
 
   // --- Filter State ---
   const [emailFilterInput, setEmailFilterInput] = useState<string>('');
@@ -36,7 +52,7 @@ export const AdminDashboard = () => {
 
   const {
     useAdminLeavesInfinite,
-    // Mutations
+    // Mutations - Removed non-existent variables properties
     approveLeave, isApproving, errorApproving,
     rejectLeave, isRejecting, errorRejecting,
     deleteLeave, isDeleting, errorDeleting,
@@ -161,19 +177,35 @@ export const AdminDashboard = () => {
                     </form>
                     {activeEmailFilter && <p className="text-sm text-base-content/70 mt-2 italic">Showing requests for: <span className="font-medium">{activeEmailFilter}</span></p>}
                 </div>
-            </div>
-        )}
+        </div>
+       )}
 
-      {/* All Leaves List Card */}
+      {/* View Switch and List/Table Section */}
       {!initialLoadError && (
         <div className="card bg-base-100 border border-base-300">
             <div className="card-body p-5 md:p-6">
-            <h2 className="card-title mb-4 text-lg">
-                {activeEmailFilter ? `Leave Requests for ${activeEmailFilter}` : 'All Leave Requests'}
-                {!isInitialLoading && ` (${counts.total})`}
-            </h2>
+                {/* Header and View Toggle */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+                    <h2 className="card-title text-lg">
+                        {activeEmailFilter ? `Leave Requests for ${activeEmailFilter}` : 'All Leave Requests'}
+                        {!isInitialLoading && ` (${counts.total})`}
+                    </h2>
+                    {!isInitialLoading && counts.total > 0 && (
+                        <label className="flex cursor-pointer gap-2 items-center">
+                            <FaList size={16} className={viewMode === 'card' ? 'text-primary' : 'text-base-content/50'}/>
+                            <input
+                                type="checkbox"
+                                className="toggle toggle-primary toggle-sm"
+                                checked={viewMode === 'table'}
+                                onChange={() => setViewMode(prev => prev === 'card' ? 'table' : 'card')}
+                                aria-label="Switch view mode"
+                            />
+                            <FaTable size={16} className={viewMode === 'table' ? 'text-primary' : 'text-base-content/50'}/>
+                        </label>
+                    )}
+                </div>
 
-            {/* Initial Loading Skeleton or List */}
+            {/* Initial Loading Skeleton (remains card-based for simplicity) */}
             {isInitialLoading ? (
                 <div className="space-y-4">
                     <div className="skeleton h-20 w-full"></div>
@@ -182,20 +214,33 @@ export const AdminDashboard = () => {
                 </div>
             ) : (
                 <>
-                    <LeaveList
-                        response={leaveListResponseProp} // Pass the constructed object
-                        isLoading={false} // Parent handles initial load/skeleton
-                        error={null} // Parent handles initial error
-                        // Pass mutation handlers/states as before
-                        onApprove={handleApprove}
-                        onReject={handleReject}
-                        onDelete={handleDelete}
-                        isApproving={isApproving}
-                        isRejecting={isRejecting}
-                        isDeleting={isDeleting}
-                    />
+                    {/* Conditional Rendering: Card List or Table View */}
+                    {viewMode === 'card' ? (
+                        <LeaveList
+                            response={leaveListResponseProp}
+                            isLoading={false}
+                            error={null}
+                            onApprove={handleApprove}
+                            onReject={handleReject}
+                            onDelete={handleDelete}
+                            isApproving={isApproving}
+                            isRejecting={isRejecting}
+                            isDeleting={isDeleting}
+                        />
+                    ) : (
+                        // Use the new LeaveTable component
+                        <LeaveTable
+                            leaves={allAdminLeaves}
+                            onApprove={handleApprove}
+                            onReject={handleReject}
+                            onDelete={handleDelete}
+                            isApproving={isApproving}
+                            isRejecting={isRejecting}
+                            isDeleting={isDeleting}
+                        />
+                    )}
 
-                    {/* "Load More" Button Area (remains the same) */}
+                    {/* "Load More" Button Area (Common for both views) */}
                     <div className="flex justify-center mt-6">
                         {hasNextPage && (
                         <button onClick={() => fetchNextPage()} disabled={isFetchingNextPage} className="btn btn-primary btn-outline w-full sm:w-auto" aria-busy={isFetchingNextPage}>
