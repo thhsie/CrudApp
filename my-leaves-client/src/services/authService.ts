@@ -94,12 +94,24 @@ export const authService = {
 
   // --- UPDATED/NEW ADMIN FUNCTIONS ---
 
-  /** Fetches paginated users (Admin) */
-  getAdminUsers: async (pageParam = 1, pageSize = DEFAULT_PAGE_SIZE): Promise<PaginatedUserResponse> => {
-    console.log(`Fetching admin users: page=${pageParam}, size=${pageSize}`);
+  /** Fetches paginated users (Admin), optionally filtered by searchTerm */
+  getAdminUsers: async (
+    pageParam = 1,
+    pageSize = DEFAULT_PAGE_SIZE,
+    searchTerm?: string | null // Add searchTerm parameter
+  ): Promise<PaginatedUserResponse> => {
+    console.log(`Fetching admin users: page=${pageParam}, size=${pageSize}, search='${searchTerm || 'none'}'`); // Log searchTerm
     try {
+        const params: Record<string, any> = { // Use Record for dynamic params
+            pageNumber: pageParam,
+            pageSize
+        };
+        // Add search term filter only if it has a value
+        if (searchTerm) {
+            params.searchTerm = searchTerm;
+        }
         const response = await api.get<PaginatedUserResponse>(`${USERS_BASE_URL}/all`, {
-            params: { pageNumber: pageParam, pageSize }, // Pass pagination params
+            params: params, // Pass updated params
         });
         console.log("Fetched users page:", response.data);
         return response.data;
