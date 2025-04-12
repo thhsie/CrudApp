@@ -47,8 +47,8 @@ export const AdminDashboard = () => {
   const [viewMode, setViewMode] = useState<'card' | 'table'>('table'); // State for view mode
 
   // --- Filter State ---
-  const [emailFilterInput, setEmailFilterInput] = useState<string>('');
-  const [activeEmailFilter, setActiveEmailFilter] = useState<string | null>(null);
+  const [searchTermFilterInput, setSearchTermFilterInput] = useState<string>('');
+  const [activeSearchTermFilter, setActiveSearchTermFilter] = useState<string | null>(null);
 
   const {
     useAdminLeavesInfinite,
@@ -66,7 +66,7 @@ export const AdminDashboard = () => {
     isFetchingNextPage,
     isLoading: isLoadingAdminLeaves,
     error: errorAdminLeaves,
-  } = useAdminLeavesInfinite({ ownerEmail: activeEmailFilter }); // Pass filter object
+  } = useAdminLeavesInfinite({ searchTerm: activeSearchTermFilter }); // Pass filter object
 
  // Flatten the pages data
   const allAdminLeaves = useMemo(() =>
@@ -98,12 +98,12 @@ export const AdminDashboard = () => {
   // --- Filter Handlers ---
   const handleApplyFilter = (e?: React.FormEvent) => {
       e?.preventDefault();
-      const trimmedEmail = emailFilterInput.trim();
-      setActiveEmailFilter(trimmedEmail ? trimmedEmail : null);
+      const trimmedSearch = searchTermFilterInput.trim();
+      setActiveSearchTermFilter(trimmedSearch ? trimmedSearch : null);
   };
   const handleClearFilter = () => {
-      setEmailFilterInput('');
-      setActiveEmailFilter(null);
+      setSearchTermFilterInput('');
+      setActiveSearchTermFilter(null);
   };
 
   // --- Render Logic ---
@@ -139,7 +139,7 @@ export const AdminDashboard = () => {
       {/* Stats Section - Show skeleton or data */}
        <div className={`stats stats-vertical lg:stats-horizontal w-full bg-base-100 border border-base-300 overflow-hidden ${isInitialLoading ? 'opacity-50 pointer-events-none' : ''}`}>
             <div className="stat">
-                <div className="stat-title text-base-content/70">Total Requests {activeEmailFilter ? '(Filtered)' : ''}</div>
+                <div className="stat-title text-base-content/70">Total Requests {activeSearchTermFilter ? '(Filtered)' : ''}</div>
                 <div className="stat-value">{isInitialLoading ? <span className="skeleton h-8 w-16"></span> : counts.total}</div>
             </div>
             <div className="stat">
@@ -163,19 +163,19 @@ export const AdminDashboard = () => {
                 <div className="card-body p-4 md:p-5">
                     <form onSubmit={handleApplyFilter} className="flex flex-col sm:flex-row items-end gap-3">
                         <label className="form-control w-full sm:flex-1">
-                            <div className="label pb-1"><span className="label-text">Filter by Email</span></div>
-                            <input type="email" placeholder="user@example.com" className="input input-bordered w-full" value={emailFilterInput} onChange={(e) => setEmailFilterInput(e.target.value)} disabled={isOverallLoading}/>
+                            <div className="label pb-1"><span className="label-text">Filter by Name/Email</span></div>
+                            <input type="text" placeholder="Search users..." className="input input-bordered w-full" value={searchTermFilterInput} onChange={(e) => setSearchTermFilterInput(e.target.value)} disabled={isOverallLoading}/>
                         </label>
                         <div className="flex gap-2 w-full sm:w-auto pt-2 sm:pt-0">
                             <button type="submit" className="btn btn-primary flex-1 sm:flex-none" disabled={isOverallLoading}>
                                 <FaSearch className="mr-1"/> Apply
                             </button>
-                            <button type="button" className="btn btn-ghost flex-1 sm:flex-none" onClick={handleClearFilter} disabled={!activeEmailFilter || isOverallLoading}>
+                            <button type="button" className="btn btn-ghost flex-1 sm:flex-none" onClick={handleClearFilter} disabled={!activeSearchTermFilter || isOverallLoading}>
                                 <FaTimes className="mr-1"/> Clear
                             </button>
                         </div>
                     </form>
-                    {activeEmailFilter && <p className="text-sm text-base-content/70 mt-2 italic">Showing requests for: <span className="font-medium">{activeEmailFilter}</span></p>}
+                    {activeSearchTermFilter && <p className="text-sm text-base-content/70 mt-2 italic">Showing requests for: <span className="font-medium">{activeSearchTermFilter}</span></p>}
                 </div>
         </div>
        )}
@@ -187,7 +187,7 @@ export const AdminDashboard = () => {
                 {/* Header and View Toggle */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
                     <h2 className="card-title text-lg">
-                        {activeEmailFilter ? `Leave Requests for ${activeEmailFilter}` : 'All Leave Requests'}
+                        {activeSearchTermFilter ? `Leave Requests for ${activeSearchTermFilter}` : 'All Leave Requests'}
                         {!isInitialLoading && ` (${counts.total})`}
                     </h2>
                     {!isInitialLoading && counts.total > 0 && (
@@ -248,14 +248,14 @@ export const AdminDashboard = () => {
                         </button>
                         )}
                         {!hasNextPage && counts.total > 0 && !isOverallLoading && (
-                        <p className="text-center text-base-content/60 italic mt-4">All {activeEmailFilter ? 'filtered ' : ''}requests loaded.</p>
+                        <p className="text-center text-base-content/60 italic mt-4">All {activeSearchTermFilter ? 'filtered ' : ''}requests loaded.</p>
                         )}
                     </div>
 
                     {/* Empty State Message (remains the same) */}
                     {counts.total === 0 && !isOverallLoading && (
                         <p className="text-center py-8 text-base-content/70 italic">
-                            {activeEmailFilter ? `No leave requests found for ${activeEmailFilter}.` : 'No leave requests found in the system.'}
+                            {activeSearchTermFilter ? `No leave requests found for ${activeSearchTermFilter}.` : 'No leave requests found in the system.'}
                         </p>
                     )}
 

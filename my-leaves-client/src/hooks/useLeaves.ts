@@ -6,7 +6,7 @@ import { authKeys } from './authKeys';
 // Define filter shape type
 export interface LeaveAdminFilter {
     pageSize?: number;
-    ownerEmail?: string | null; // Filter by owner's email
+    searchTerm?: string | null; // Filter by owner's email or username
 }
 
 // Query keys factory for leaves
@@ -47,7 +47,7 @@ export const useLeaves = () => {
 
   const useAdminLeavesInfinite = (filter: LeaveAdminFilter = {}) => { // Accept filter object
     const pageSize = filter.pageSize ?? ADMIN_PAGE_SIZE; // Use default if not provided
-    const ownerEmail = filter.ownerEmail;
+    const searchTerm = filter.searchTerm;
 
     return useInfiniteQuery<
         PaginatedLeaveResponse,
@@ -56,8 +56,8 @@ export const useLeaves = () => {
         ReadonlyArray<string | number | LeaveAdminFilter>, // Updated QueryKey type
         number // PageParam type
     >({
-        queryKey: leavesKeys.adminAll({ pageSize, ownerEmail }), // Use filter in key
-        queryFn: ({ pageParam = 1 }) => leaveService.getAdminLeaves(pageParam, pageSize, ownerEmail), // Pass email to service
+        queryKey: leavesKeys.adminAll({ pageSize, searchTerm }), // Use filter in key
+        queryFn: ({ pageParam = 1 }) => leaveService.getAdminLeaves(pageParam, pageSize, searchTerm), // Pass searchTerm to service
         initialPageParam: 1,
         getNextPageParam: (lastPage) => {
             // Use the actual pageSize used for the query
