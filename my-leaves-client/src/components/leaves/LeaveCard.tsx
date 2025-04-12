@@ -35,7 +35,10 @@ export const LeaveCard = ({
   isRejecting,
   isDeleting,
 }: LeaveCardProps) => {
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    type: 'approve' | 'reject' | 'delete' | null;
+  }>({ isOpen: false, type: null });
   const { isAdmin } = useAuth();
 
   // OwnerId is not available, so non-admins can only delete their own PENDING leaves.
@@ -46,26 +49,13 @@ export const LeaveCard = ({
   // Check if any action is in progress to disable buttons
   const isActionInProgress = isApproving || isRejecting || isDeleting;
 
-  const handleDeleteConfirm = () => {
-    if (isActionInProgress) return;
-    onDelete?.(leave.id);
-    setIsDeleteDialogOpen(false); // Close dialog after confirmation
+  const handleConfirm = () => {
+    if (isActionInProgress || !confirmState.type) return;
+    if (confirmState.type === 'delete') onDelete?.(leave.id);
+    if (confirmState.type === 'approve') onApprove?.(leave.id);
+    if (confirmState.type === 'reject') onReject?.(leave.id);
+    setConfirmState(prev => ({ ...prev, isOpen: false }));
   };
-
-  const handleApprove = () => {
-    if (isActionInProgress) return;
-    onApprove?.(leave.id);
-  }
-
-  const handleReject = () => {
-     if (isActionInProgress) return;
-    onReject?.(leave.id);
-  }
-
-  const handleOpenDeleteDialog = () => {
-     if (isActionInProgress) return;
-    setIsDeleteDialogOpen(true);
-  }
 
   return (
     <> {/* Use Fragment */}
@@ -107,7 +97,7 @@ export const LeaveCard = ({
                 <>
                   <button
                     className={`btn btn-success btn-sm ${isApproving ? 'btn-disabled' : ''}`}
-                    onClick={handleApprove}
+                    onClick={() => setConfirmState({ isOpen: true, type: 'approve' })}
                     disabled={isActionInProgress}
                     aria-label={`Approve leave request ${leave.id}`}
                   >
@@ -115,7 +105,7 @@ export const LeaveCard = ({
                   </button>
                   <button
                     className={`btn btn-error btn-sm ${isRejecting ? 'btn-disabled' : ''}`}
-                    onClick={handleReject}
+                    onClick={() => setConfirmState({ isOpen: true, type: 'reject' })}
                     disabled={isActionInProgress}
                      aria-label={`Reject leave request ${leave.id}`}
                   >
@@ -128,7 +118,7 @@ export const LeaveCard = ({
               {canDelete && (
                 <button
                   className={`btn btn-ghost btn-sm text-error ${isDeleting ? 'btn-disabled' : ''}`} // Use ghost button for delete
-                  onClick={handleOpenDeleteDialog}
+                  onClick={() => setConfirmState({ isOpen: true, type: 'delete' })}
                   disabled={isActionInProgress}
                    aria-label={`Delete leave request ${leave.id}`}
                 >
@@ -142,15 +132,17 @@ export const LeaveCard = ({
 
       {/* Confirmation Dialog */}
       <ConfirmDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={handleDeleteConfirm}
-        title="Confirm Deletion"
-        confirmText="Delete"
-        confirmButtonClass="btn-error" // Use error style for delete confirmation
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={handleConfirm}
+        title={confirmState.type === 'delete' ? 'Delete Leave Request' : confirmState.type === 'approve' ? 'Approve Leave Request' : 'Reject Leave Request'}
+        confirmText={confirmState.type === 'delete' ? 'Delete' : confirmState.type === 'approve' ? 'Approve' : 'Reject'}
+        confirmButtonClass={confirmState.type === 'delete' ? 'btn-error' : confirmState.type === 'approve' ? 'btn-success' : 'btn-error'}
+        isLoading={isActionInProgress}
       >
-        <p>Are you sure you want to delete this leave request?</p>
-        <p className="text-sm text-warning mt-2">This action cannot be undone.</p> {/* Use warning color */}
+        {confirmState.type === 'delete' ? 'Are you sure you want to delete this leave request?' :
+         confirmState.type === 'approve' ? 'Are you sure you want to approve this leave request?' :
+         'Are you sure you want to reject this leave request?'}
       </ConfirmDialog>
     </>
   );

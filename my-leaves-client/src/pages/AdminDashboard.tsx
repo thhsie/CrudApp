@@ -129,7 +129,7 @@ export const AdminDashboard = () => {
 
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold">Admin Section</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Admin section</h1>
         <p className="text-base-content/70 mt-1">Manage all user leave requests.</p>
       </div>
 

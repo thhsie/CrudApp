@@ -8,15 +8,30 @@ import { Loading } from '../components/ui/Loading';
 import { ErrorDisplay } from '../components/ui/ErrorDisplay';
 import { Feedback } from '../hooks/useAuthQuery';
 import { getApiErrorMessage } from '../services/authService';
+import { FaList, FaTable } from 'react-icons/fa';
+import { UserLeaveTable } from '../components/leaves/UserLeaveTable';
 
 // Re-define or import FeedbackAlert component here (same as in AdminUsers.tsx)
-const FeedbackAlert = ({ feedback, onClose }: { feedback: Feedback; onClose: () => void }) => {
-    if (!feedback) return null;
-    const alertClass = feedback.type === 'success' ? 'alert-success' : 'alert-error';
+const FeedbackAlert = ({ feedback, onClose }: { feedback: Feedback | null; onClose: () => void }) => {
+    // Moved useEffect outside conditional return
     useEffect(() => {
-        const timer = setTimeout(() => { onClose(); }, 5000);
-        return () => clearTimeout(timer);
-    }, [feedback, onClose]);
+        let timer: NodeJS.Timeout | undefined;
+        if (feedback) {
+            timer = setTimeout(() => {
+                onClose();
+            }, 5000);
+        }
+        // Cleanup function
+        return () => {
+            if (timer) {
+                clearTimeout(timer);
+            }
+        };
+    }, [feedback, onClose]); // Dependencies remain the same
+
+    if (!feedback) return null; // Conditional return is okay here
+
+    const alertClass = feedback.type === 'success' ? 'alert-success' : 'alert-error';
 
     return (
         <div className="toast toast-end toast-bottom z-50 p-4">
@@ -33,6 +48,7 @@ const FeedbackAlert = ({ feedback, onClose }: { feedback: Feedback; onClose: () 
 export const LeaveManagement = () => {
   const location = useLocation();
   const [isFormVisible, setIsFormVisible] = useState(location.state?.showForm === true);
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('table'); // State for view mode
   const [pageFeedback, setPageFeedback] = useState<Feedback>(null); // State for feedback messages
 
   // Use the specific infinite query hook for user leaves
@@ -158,28 +174,51 @@ export const LeaveManagement = () => {
       {/* Leave History/List Card */}
       <div className="card bg-base-100 border border-base-300">
         <div className="card-body p-5 md:p-6">
-           <h2 className="card-title mb-4 text-lg">Leave History</h2>
+           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+               <h2 className="card-title text-lg">Leave History</h2>
+               {allUserLeaves.length > 0 && (
+                   <label className="flex cursor-pointer gap-2 items-center">
+                       <FaList size={16} className={viewMode === 'card' ? 'text-primary' : 'text-base-content/50'}/>
+                       <input
+                           type="checkbox"
+                           className="toggle toggle-primary toggle-sm"
+                           checked={viewMode === 'table'}
+                           onChange={() => setViewMode(prev => prev === 'card' ? 'table' : 'card')}
+                           aria-label="Switch view mode"
+                       />
+                       <FaTable size={16} className={viewMode === 'table' ? 'text-primary' : 'text-base-content/50'}/>
+                   </label>
+               )}
+           </div>
 
-           {/* Pass the response object and delete handler */}
-           <LeaveList
-                response={{
-                    data: allUserLeaves,
-                    totalCount: totalCount,
-                    pendingCount: userLeavesPages?.pages[0]?.pendingCount ?? 0,
-                    approvedCount: userLeavesPages?.pages[0]?.approvedCount ?? 0,
-                    rejectedCount: userLeavesPages?.pages[0]?.rejectedCount ?? 0,
-                    pageNumber: userLeavesPages?.pages.length ?? 1,
-                    pageSize: userLeavesPages?.pages[0]?.pageSize ?? allUserLeaves.length
-                }}
-                // Loading shown only initially or when empty
-                isLoading={isLoadingUserLeaves && !isFetchingNextPage && allUserLeaves.length === 0}
-                // Error shown only initially or when empty
-                error={errorUserLeaves && allUserLeaves.length === 0 ? errorUserLeaves : null}
-                onDelete={handleDelete} // Pass updated delete handler
-                isDeleting={isDeleting} // Pass deleting state
-            />
+           {/* Conditional Rendering: Card List or Table View */}
+           {viewMode === 'card' ? (
+               <LeaveList
+                   response={{
+                       data: allUserLeaves,
+                       totalCount: totalCount,
+                       pendingCount: userLeavesPages?.pages[0]?.pendingCount ?? 0,
+                       approvedCount: userLeavesPages?.pages[0]?.approvedCount ?? 0,
+                       rejectedCount: userLeavesPages?.pages[0]?.rejectedCount ?? 0,
+                       pageNumber: userLeavesPages?.pages.length ?? 1,
+                       pageSize: userLeavesPages?.pages[0]?.pageSize ?? allUserLeaves.length
+                   }}
+                   // Loading shown only initially or when empty
+                   isLoading={isLoadingUserLeaves && !isFetchingNextPage && allUserLeaves.length === 0}
+                   // Error shown only initially or when empty
+                   error={errorUserLeaves && allUserLeaves.length === 0 ? errorUserLeaves : null}
+                   onDelete={handleDelete} // Pass updated delete handler
+                   isDeleting={isDeleting} // Pass deleting state
+               />
+           ) : (
+               <UserLeaveTable
+                   leaves={allUserLeaves}
+                   onDelete={handleDelete}
+                   isDeleting={isDeleting}
+               />
+           )}
 
-            {/* "Load More" Button Area */}
+           {/* "Load More" Button Area */}
             <div className="flex justify-center mt-6">
                 {hasNextPage && (
                     <button
