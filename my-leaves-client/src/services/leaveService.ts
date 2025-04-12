@@ -20,16 +20,16 @@ export const leaveService = {
     return response.data;
   },
 
-  /** Fetches paginated leave requests (Admin only), optionally filtered by owner email */
-  getAdminLeaves: async (pageParam = 1, pageSize = DEFAULT_PAGE_SIZE, ownerEmail?: string | null): Promise<PaginatedLeaveResponse> => {
-    console.log(`Fetching admin leaves: page=${pageParam}, size=${pageSize}, email=${ownerEmail || 'none'}`);
+  /** Fetches paginated leave requests (Admin only), optionally filtered by owner email or username */
+  getAdminLeaves: async (pageParam = 1, pageSize = DEFAULT_PAGE_SIZE, searchTerm?: string | null): Promise<PaginatedLeaveResponse> => {
+    console.log(`Fetching admin leaves: page=${pageParam}, size=${pageSize}, searchTerm=${searchTerm || 'none'}`);
     const params: Record<string, any> = { // Use Record for dynamic params
          pageNumber: pageParam,
          pageSize
     };
-    // Add email filter only if it has a value
-    if (ownerEmail) {
-        params.ownerEmail = ownerEmail;
+    // Add search term filter only if it has a value
+    if (searchTerm) {
+        params.searchTerm = searchTerm;
     }
     const response = await api.get<PaginatedLeaveResponse>(`${LEAVES_BASE_URL}/all`, { params });
     return response.data;

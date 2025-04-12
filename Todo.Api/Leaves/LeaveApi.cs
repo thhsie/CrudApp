@@ -17,7 +17,12 @@ internal static class LeaveApi
         group.RequirePerUserRateLimit();
         group.WithParameterValidation(typeof(LeaveItem), typeof(PaginationRequest));
 
-        group.MapGet("/all", async Task<Results<Ok<PaginatedResponse<LeaveItem>>, NotFound>> (TodoDbContext db, UserManager<TodoUser> userManager, [AsParameters] PaginationRequest pagination, [FromQuery] string? ownerEmail, CurrentUser user) =>
+        group.MapGet("/all", async Task<Results<Ok<PaginatedResponse<LeaveItem>>, NotFound>> (
+            TodoDbContext db,
+            UserManager<TodoUser> userManager,
+            [AsParameters] PaginationRequest pagination,
+            [FromQuery] string? searchTerm,
+            CurrentUser user) =>
         {
             if (!user.IsAdmin)
             {
@@ -26,10 +31,15 @@ internal static class LeaveApi
 
             string? targetUserId = null;
             // Find user ID if email filter is provided
-            if (!string.IsNullOrWhiteSpace(ownerEmail))
+            if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                var targetUser = await userManager.FindByEmailAsync(ownerEmail);
-                if (targetUser == null)
+                var lowerSearchTerm = searchTerm.ToLowerInvariant();
+                var userQuery = db.Users.AsNoTracking().Where(u =>
+                    (u.Email != null && u.Email.ToLower().Contains(lowerSearchTerm)) ||
+                    (u.UserName != null && u.UserName.ToLower().Contains(lowerSearchTerm))
+                );
+                var userId = await userQuery.Select(u => u.Id).SingleOrDefaultAsync();
+                if (string.IsNullOrEmpty(userId))
                 {
                     // Return empty results if email doesn't match any user
                     var emptyResponse = new PaginatedResponse<LeaveItem>
@@ -46,12 +56,12 @@ internal static class LeaveApi
                     // Or alternatively return BadRequest:
                     // return TypedResults.BadRequest($"User with email '{ownerEmail}' not found.");
                 }
-                targetUserId = targetUser.Id;
+                targetUserId = userId;
             }
 
             var query = db.Leaves.AsSplitQuery().AsNoTracking();
 
-            // Apply email filter conditionally
+            // Apply search filter conditionally
             if (targetUserId != null)
             {
                 query = query.Where(l => l.OwnerId == targetUserId);
@@ -181,7 +191,8 @@ internal static class LeaveApi
 
         group.MapPost("/", async Task<Results<Created<LeaveItem>, BadRequest<string>>> (TodoDbContext db, LeaveItem newLeave, CurrentUser owner) =>
         {
-            var leaveDays = (int)(newLeave.EndDate - newLeave.StartDate).TotalDays;
+            // IMPORTANT: Add +1 if EndDate is inclusive of the leave period
+            var leaveDays = (int)(newLeave.EndDate - newLeave.StartDate).TotalDays + 1;
             if (!owner.User.HasSufficientLeaveBalance(newLeave.Type, leaveDays))
             {
                 return TypedResults.BadRequest("Insufficient leave balance.");

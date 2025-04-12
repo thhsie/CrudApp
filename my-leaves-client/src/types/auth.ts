@@ -43,15 +43,6 @@ export interface AccessTokenResponse {
     refreshToken: string;
 }
 
-// --- Updated/New TYPES ---
-
-/** Structure of leave balances (matches backend LeaveBalancesDto) */
-export interface LeaveBalances {
-    annualLeavesBalance: number;
-    sickLeavesBalance: number;
-    specialLeavesBalance: number;
-}
-
 /** DTO for updating leave balances via API (matches backend LeaveBalancesUpdateRequest) */
 export interface LeaveBalancesUpdateDto {
     paidLeavesBalance: number; // Matches backend property name
@@ -59,12 +50,27 @@ export interface LeaveBalancesUpdateDto {
     specialLeavesBalance: number;
 }
 
-/** DTO representing a user in the admin list (matches backend UserListItemDto) */
+// Interface for Taken Leave counts (matches backend DTO)
+export interface LeavesTaken {
+    annualLeavesTaken: number;
+    sickLeavesTaken: number;
+    specialLeavesTaken: number;
+}
+
+// Interface for Leave Balances (matches backend DTO)
+export interface LeaveBalances {
+    annualLeavesBalance: number;
+    sickLeavesBalance: number;
+    specialLeavesBalance: number;
+}
+
+// Update UserListItem to include both balances and taken counts
 export interface UserListItem {
     id: string;
     email: string | null;
     userName: string | null;
-    leaveBalances: LeaveBalances | null; // Use the LeaveBalances interface
+    leaveBalances: LeaveBalances | null; // Existing
+    leavesTaken: LeavesTaken | null; // New property
 }
 
 /** Structure for the paginated user response (matches backend PaginatedResponse<UserListItemDto>) */

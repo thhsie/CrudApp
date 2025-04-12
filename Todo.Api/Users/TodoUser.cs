@@ -96,16 +96,28 @@ public class UserRole
     public string Role { get; set; } = default!;
 }
 
-public class LeaveBalancesDto // DTO for owned entity
+// DTO for Taken Leave Counts
+public class LeavesTakenDto
+{
+    public int AnnualLeavesTaken { get; set; }
+    public int SickLeavesTaken { get; set; }
+    public int SpecialLeavesTaken { get; set; }
+}
+
+// DTO for Leave Balances
+public class LeaveBalancesDto
 {
     public int AnnualLeavesBalance { get; set; }
     public int SickLeavesBalance { get; set; }
     public int SpecialLeavesBalance { get; set; }
 }
+
+// UPDATE the UserListItemDto to include both balances and taken counts
 public class UserListItemDto
 {
     public required string Id { get; set; }
     public string? Email { get; set; }
     public string? UserName { get; set; }
-    public LeaveBalancesDto? LeaveBalances { get; set; } // Use the DTO
+    public LeaveBalancesDto? LeaveBalances { get; set; }
+    public LeavesTakenDto? LeavesTaken { get; set; } // Add this property
 }

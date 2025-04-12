@@ -187,7 +187,7 @@ export const LeaveForm = ({ onSubmit, isSubmitting }: LeaveFormProps) => {
               mode="single"
               selected={selectedEndDate}
               onSelect={handleDateSelectInModal}
-              disabled={{ before: selectedStartDate ? addDays(selectedStartDate, 1) : today }}
+              disabled={{ before: selectedStartDate ? selectedStartDate : today }}
               className="react-day-picker m-4"
               showOutsideDays
               fixedWeeks
