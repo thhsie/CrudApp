@@ -59,44 +59,47 @@ export const LeaveCard = ({
 
   return (
     <> {/* Use Fragment */}
-      <div className="card card-bordered bg-base-200 shadow-lg mb-5"> {/* Use card-bordered, shadow-sm */}
-        <div className="card-body p-4 md:p-10"> {/* Slightly reduced padding */}
+      <div className="card card-bordered bg-base-200 shadow-sm p-4 md:p-4">
+        <div className="card-body p-2 md:p-4">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
-            <h2 className="card-title text-lg font-semibold mb-1 sm:mb-0"> {/* Adjusted title size/weight */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2">
+             {/* Reduced title size */}
+            <h2 className="card-title text-xs md:text-sm font-semibold mb-1 sm:mb-0">
               {getLeaveTypeText(leave.type)} Leave
             </h2>
             <LeaveStatusBadge status={leave.status} />
           </div>
 
-          {/* Dates */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-2">
+           {/* Dates (Reverted to grid, smaller text) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 my-1">
             <div>
-              <p className="text-xs uppercase tracking-wider text-base-content/60 mb-0.5">Start Date</p> {/* Adjusted label style */}
-              <p className="font-medium">{formatDate(leave.startDate)}</p>
+              <p className="text-xs uppercase tracking-wider text-base-content/60 mb-0.5">Start Date</p>
+              {/* Ensure consistent small text */}
+              <p className="font-medium text-xs">{formatDate(leave.startDate)}</p>
             </div>
             <div>
                <p className="text-xs uppercase tracking-wider text-base-content/60 mb-0.5">End Date</p>
-              <p className="font-medium">{formatDate(leave.endDate)}</p>
+               {/* Ensure consistent small text */}
+              <p className="font-medium text-xs">{formatDate(leave.endDate)}</p>
             </div>
           </div>
 
-          {/* Requested By (Admin only) */}
+          {/* Requested By (Admin only) (Reverted, already small text) */}
           {isAdmin && leave.ownerEmail && (
-            <div className="mt-2"> {/* Add some margin top */}
+            <div className="mt-1">
               <p className="text-xs uppercase tracking-wider text-base-content/60 mb-0.5">Requested By</p>
-              <p className="font-medium text-sm">{leave.ownerEmail}</p> {/* Slightly smaller font */}
+              <p className="font-medium text-xs truncate" title={leave.ownerEmail}>{leave.ownerEmail}</p> {/* Added truncate */}
             </div>
           )}
 
           {/* Actions */}
-          {(isAdmin || canDelete) && ( // Only show actions div if there are actions
-            <div className="card-actions justify-end items-center mt-3 pt-5 border-t border-base-300 space-x-2"> {/* Added border-top */}
+          {(isAdmin || canDelete) && (
+            <div className="card-actions justify-end items-center mt-2 pt-2 border-t border-base-300 space-x-1">
               {/* Admin Actions */}
               {isAdmin && isPending && onApprove && onReject && (
                 <>
                   <button
-                    className={`btn btn-success btn-sm ${isApproving ? 'btn-disabled' : ''}`}
+                    className={`btn btn-success btn-xs ${isApproving ? 'btn-disabled' : ''}`}
                     onClick={() => setConfirmState({ isOpen: true, type: 'approve' })}
                     disabled={isActionInProgress}
                     aria-label={`Approve leave request ${leave.id}`}
@@ -104,7 +107,7 @@ export const LeaveCard = ({
                      {isApproving ? <span className="loading loading-spinner loading-xs"></span> : 'Approve'}
                   </button>
                   <button
-                    className={`btn btn-error btn-sm ${isRejecting ? 'btn-disabled' : ''}`}
+                    className={`btn btn-error btn-xs ${isRejecting ? 'btn-disabled' : ''}`}
                     onClick={() => setConfirmState({ isOpen: true, type: 'reject' })}
                     disabled={isActionInProgress}
                      aria-label={`Reject leave request ${leave.id}`}
@@ -117,7 +120,7 @@ export const LeaveCard = ({
               {/* Delete Action (visible to admin for pending, or owner for pending) */}
               {canDelete && (
                 <button
-                  className={`btn btn-ghost btn-sm text-error ${isDeleting ? 'btn-disabled' : ''}`} // Use ghost button for delete
+                  className={`btn btn-ghost btn-xs text-error ${isDeleting ? 'btn-disabled' : ''}`}
                   onClick={() => setConfirmState({ isOpen: true, type: 'delete' })}
                   disabled={isActionInProgress}
                    aria-label={`Delete leave request ${leave.id}`}
