@@ -77,7 +77,8 @@ public class Leave
 
     private int CalculateLeaveDays()
     {
-        return (int)(EndDate - StartDate).TotalDays;
+        // IMPORTANT: Add +1 if EndDate is inclusive of the leave period
+        return (int)(EndDate - StartDate).TotalDays + 1;
     }
 }
 

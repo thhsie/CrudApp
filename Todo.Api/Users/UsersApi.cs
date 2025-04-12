@@ -119,17 +119,27 @@ public static class UsersApi
                 return TypedResults.Unauthorized();
             }
 
-            var query = db.Users.Include(u => u.LeaveBalances).AsNoTracking(); // Include balances
+            // Base query for users
+            var userQuery = db.Users
+                .Include(u => u.LeaveBalances) // Include balances
+                .AsNoTracking();
 
-            var totalCount = await query.CountAsync();
-
+            // Apply search filter *before* counting for accurate totalCount
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                query = query.Where(u => (!string.IsNullOrEmpty(u.Email) && u.Email.Contains(searchTerm)) || (!string.IsNullOrEmpty(u.UserName) && u.UserName.Contains(searchTerm)));
+                var lowerSearchTerm = searchTerm.ToLowerInvariant(); // Optimize for case-insensitive search
+                userQuery = userQuery.Where(u =>
+                    (u.Email != null && u.Email.ToLower().Contains(lowerSearchTerm)) ||
+                    (u.UserName != null && u.UserName.ToLower().Contains(lowerSearchTerm))
+                );
             }
 
-            var users = await query
-                .OrderBy(u => u.Email) // Or UserName
+            // Get the total count *after* filtering
+            var totalCount = await userQuery.CountAsync();
+
+            // Apply pagination and select initial user data
+            var users = await userQuery
+                .OrderBy(u => u.Email ?? u.UserName) // Ensure consistent ordering
                 .Skip((pagination.PageNumber - 1) * pagination.PageSize)
                 .Take(pagination.PageSize)
                 .Select(u => new UserListItemDto
@@ -137,24 +147,61 @@ public static class UsersApi
                     Id = u.Id,
                     Email = u.Email,
                     UserName = u.UserName,
-                    LeaveBalances = u.LeaveBalances != null ? new LeaveBalancesDto // Map owned entity to a DTO
+                    LeaveBalances = u.LeaveBalances != null ? new LeaveBalancesDto
                     {
                         AnnualLeavesBalance = u.LeaveBalances.AnnualLeavesBalance,
                         SickLeavesBalance = u.LeaveBalances.SickLeavesBalance,
                         SpecialLeavesBalance = u.LeaveBalances.SpecialLeavesBalance
-                    } : null
+                    } : null,
+                    LeavesTaken = null // Initialize as null, will populate next
                 })
                 .ToListAsync();
+
+            // --- Calculate and add Taken Leaves ---
+            if (users.Any()) // Only proceed if there are users on the current page
+            {
+                var userIds = users.Select(u => u.Id).ToList();
+
+                // Query approved leaves for the users on the current page
+                var approvedLeaves = await db.Leaves
+                    .Where(l => userIds.Contains(l.OwnerId) && l.Status == LeaveStatus.Approved)
+                    .Select(l => new { l.OwnerId, l.Type, l.StartDate, l.EndDate }) // Select only needed fields
+                    .ToListAsync();
+
+                // Calculate taken days per user per type in memory
+                var takenLeavesSummary = approvedLeaves
+                    .GroupBy(l => new { l.OwnerId, l.Type })
+                    .Select(g => new
+                    {
+                        g.Key.OwnerId,
+                        g.Key.Type,
+                        // IMPORTANT: Add +1 if EndDate is inclusive of the leave period
+                        TotalDaysTaken = g.Sum(l => (int)(l.EndDate.Date - l.StartDate.Date).TotalDays + 1)
+                    })
+                    .ToList(); // Bring grouped summary into memory
+
+                // Map the summary back to the user DTOs
+                foreach (var user in users)
+                {
+                    var userTaken = takenLeavesSummary.Where(t => t.OwnerId == user.Id).ToList();
+                    user.LeavesTaken = new LeavesTakenDto
+                    {
+                        AnnualLeavesTaken = userTaken.FirstOrDefault(t => t.Type == (int)LeaveType.Annual)?.TotalDaysTaken ?? 0,
+                        SickLeavesTaken = userTaken.FirstOrDefault(t => t.Type == (int)LeaveType.Sick)?.TotalDaysTaken ?? 0,
+                        SpecialLeavesTaken = userTaken.FirstOrDefault(t => t.Type == (int)LeaveType.Special)?.TotalDaysTaken ?? 0,
+                    };
+                }
+            }
+            // --- End of Taken Leaves Calculation ---
+
 
             var response = new PaginatedResponse<UserListItemDto>
             {
                 Data = users,
                 TotalCount = totalCount,
-                // These counts aren't relevant for users, set to 0 or remove from PaginatedResponse if possible,
-                // otherwise, just populate Data, TotalCount, PageNumber, PageSize.
-                PendingCount = 0,
-                ApprovedCount = 0,
-                RejectedCount = 0,
+                PendingCount = 0, // Not relevant for user list
+                ApprovedCount = 0,// Not relevant for user list
+                RejectedCount = 0,// Not relevant for user list
                 PageNumber = pagination.PageNumber,
                 PageSize = pagination.PageSize
             };

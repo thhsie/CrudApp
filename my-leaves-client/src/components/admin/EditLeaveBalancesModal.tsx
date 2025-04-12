@@ -122,7 +122,7 @@ export const EditLeaveBalancesModal = ({
         {/* Close button (positioned absolute) - triggers onClose via useEffect */}
         <button className="btn btn-sm btn-circle btn-ghost absolute right-4 top-4" onClick={handleCancelClick} type="button" disabled={isSaving}>✕</button>
 
-        <h3 className="font-bold text-lg mb-1">Readjust balances</h3>
+        <h3 className="font-bold text-lg mb-1">Reallocate balances</h3>
         <p className="text-sm text-base-content/70 mb-4 truncate" title={user.email ?? user.userName ?? `User ID: ${user.id}`}>
             for: {user.email || user.userName || `User ID: ${user.id}`}
         </p>

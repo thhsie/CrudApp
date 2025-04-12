@@ -181,7 +181,8 @@ internal static class LeaveApi
 
         group.MapPost("/", async Task<Results<Created<LeaveItem>, BadRequest<string>>> (TodoDbContext db, LeaveItem newLeave, CurrentUser owner) =>
         {
-            var leaveDays = (int)(newLeave.EndDate - newLeave.StartDate).TotalDays;
+            // IMPORTANT: Add +1 if EndDate is inclusive of the leave period
+            var leaveDays = (int)(newLeave.EndDate - newLeave.StartDate).TotalDays + 1;
             if (!owner.User.HasSufficientLeaveBalance(newLeave.Type, leaveDays))
             {
                 return TypedResults.BadRequest("Insufficient leave balance.");

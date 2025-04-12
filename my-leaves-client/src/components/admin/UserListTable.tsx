@@ -1,57 +1,109 @@
+// src/components/admin/UserListTable.tsx
 import { UserListItem } from '../../types/auth';
+import { FaEdit } from 'react-icons/fa';
 
 interface UserListTableProps {
   users: UserListItem[];
-  onEdit: (user: UserListItem) => void; // Callback when edit button is clicked
+  onEdit: (user: UserListItem) => void;
 }
+
+// Helper function to format the stat-like display within a cell
+const renderLeaveStat = (balance: number | undefined | null, taken: number | undefined | null) => {
+  // Default taken to 0 if null/undefined for display
+  const displayTaken = taken ?? 0;
+
+  // Handle balance display, applying color only if it's a valid number
+  const displayBalanceElement = typeof balance === 'number'
+    ? <span className="text-success">{balance}</span> // Apply success color
+    : <span className="text-xs italic opacity-50">N/A</span>; // Render 'N/A' without success color
+
+  return (
+    <div className="text-right"> {/* Align content to the right */}
+      {/* Balance: Render the conditionally colored element */}
+      <div className="text-sm text-base-content/60 tabular-nums">
+        Available: <span className="text-success font-medium">{displayBalanceElement}</span>
+      </div>
+      {/* Taken: Keep base style for "Taken:", apply error color only to the number */}
+      <div className="text-xs text-base-content/60 tabular-nums">
+        Taken: <span className="text-error font-medium">{displayTaken}</span>
+      </div>
+    </div>
+  );
+};
 
 export const UserListTable = ({ users, onEdit }: UserListTableProps) => {
   return (
-    // Use DaisyUI table component within an overflow container for responsiveness
-    <div className="overflow-x-auto">
-      <table className="table table-zebra w-full table-sm md:table-md"> {/* Use size modifiers */}
-        {/* Table Head */}
-        <thead>
+    <div className="overflow-x-auto"> {/* Keep horizontal scroll */}
+      {/* Apply table-zebra for striping and potentially table-sm or table-xs for density */}
+      <table className="table table-zebra table-sm w-full">
+        {/* Head */}
+        <thead className="text-base-content/80"> {/* Slightly enhance header contrast */}
           <tr>
-            <th>Email</th>
-            <th>User Name</th>
-            <th className="text-right">Annual</th> {/* Align balance numbers to the right */}
+            {/* User Info (takes more space now) */}
+            <th className="w-1/3">User</th>
+
+            {/* Combined Leave Type Headers */}
+            <th className="text-right">Annual</th>
             <th className="text-right">Sick</th>
             <th className="text-right">Special</th>
-            <th className="text-center">Actions</th> {/* Center align actions */}
+
+            {/* Actions */}
+            <th className="text-right">Edit</th>
           </tr>
         </thead>
-        {/* Table Body */}
         <tbody>
           {users.map((user) => (
-            <tr key={user.id} className="hover"> {/* Add hover effect */}
-              {/* User Email (truncate if long) */}
-              <td className="max-w-xs truncate" title={user.email ?? undefined}>{user.email || '-'}</td>
-              {/* User Name */}
-              <td>{user.userName || '-'}</td>
-              {/* Leave Balances (handle null case, align right) */}
-              <td className="text-right">
-                {user.leaveBalances?.annualLeavesBalance ?? <span className="text-base-content/50">N/A</span>}
+            <tr key={user.id} className="hover"> {/* Keep hover effect */}
+              {/* User Info Cell */}
+              <td>
+                <div className="font-bold">{user.userName || 'N/A'}</div>
+                <div className="text-sm opacity-70">{user.email || 'No Email'}</div>
               </td>
-              <td className="text-right">
-                {user.leaveBalances?.sickLeavesBalance ?? <span className="text-base-content/50">N/A</span>}
+
+              {/* Annual Leave Stat Cell */}
+              <td>
+                {renderLeaveStat(
+                  user.leaveBalances?.annualLeavesBalance,
+                  user.leavesTaken?.annualLeavesTaken,
+                )}
               </td>
-              <td className="text-right">
-                {user.leaveBalances?.specialLeavesBalance ?? <span className="text-base-content/50">N/A</span>}
+
+              {/* Sick Leave Stat Cell */}
+              <td>
+                 {renderLeaveStat(
+                  user.leaveBalances?.sickLeavesBalance,
+                  user.leavesTaken?.sickLeavesTaken,
+                )}
               </td>
-              {/* Action Button */}
-              <td className="text-center">
+
+              {/* Special Leave Stat Cell */}
+              <td>
+                 {renderLeaveStat(
+                  user.leaveBalances?.specialLeavesBalance,
+                  user.leavesTaken?.specialLeavesTaken,
+                )}
+              </td>
+
+              {/* Actions Cell */}
+              <td className="text-right">
                 <button
-                  className="btn btn-ghost btn-sm text-primary px-2" // Smaller padding, ghost style
-                  onClick={() => onEdit(user)} // Trigger edit handler
-                  aria-label={`Edit leave balances for ${user.email || user.userName}`}
+                  className="btn btn-ghost btn-sm btn-square" // Keep square ghost button for edit
+                  onClick={() => onEdit(user)}
+                  aria-label={`Edit balances for ${user.userName || user.email}`}
+                  title="Edit Balances" // Add title for better accessibility
                 >
-                  Edit Balances
+                  <FaEdit />
                 </button>
               </td>
             </tr>
           ))}
         </tbody>
+         {/* Optional: Footer for summary or notes */}
+         {/* <tfoot>
+          <tr>
+            <td colSpan={5} className="text-center text-xs opacity-60">Leave balances and taken days</td>
+          </tr>
+        </tfoot> */}
       </table>
     </div>
   );

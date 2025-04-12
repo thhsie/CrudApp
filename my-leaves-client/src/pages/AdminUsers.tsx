@@ -4,13 +4,12 @@ import { UserListTable } from '../components/admin/UserListTable';
 import { EditLeaveBalancesModal } from '../components/admin/EditLeaveBalancesModal';
 import { Loading } from '../components/ui/Loading';
 import { ErrorDisplay } from '../components/ui/ErrorDisplay';
-import { UserListItem, LeaveBalancesUpdateDto } from '../types/auth';
+import { UserListItem, LeaveBalancesUpdateDto } from '../types/auth'; // Ensure UserListItem is updated type
 import { getApiErrorMessage } from '../services/authService';
 import { FaSearch, FaTimes } from 'react-icons/fa'; // Import icons
 
-// FeedbackAlert Component (assuming it's defined correctly as in the example)
+// FeedbackAlert Component (assuming it's defined correctly or imported)
 const FeedbackAlert = ({ feedback, onClose }: { feedback: Feedback | null; onClose: () => void }) => {
-    // Moved useEffect outside conditional return
     useEffect(() => {
         let timer: NodeJS.Timeout | undefined;
         if (feedback) {
@@ -18,15 +17,14 @@ const FeedbackAlert = ({ feedback, onClose }: { feedback: Feedback | null; onClo
                 onClose();
             }, 5000);
         }
-        // Cleanup function
         return () => {
             if (timer) {
                 clearTimeout(timer);
             }
         };
-    }, [feedback, onClose]); // Dependencies remain the same
+    }, [feedback, onClose]);
 
-    if (!feedback) return null; // Conditional return is okay here
+    if (!feedback) return null;
 
     const alertClass = feedback.type === 'success' ? 'alert-success' : 'alert-error';
 
@@ -44,25 +42,37 @@ const FeedbackAlert = ({ feedback, onClose }: { feedback: Feedback | null; onClo
 
 // AdminUsers Page Component
 export const AdminUsers = () => {
-  const { isAdmin, useAdminUsersInfinite, updateLeaveBalancesAsync, isUpdatingBalances, errorUpdatingBalances, isLoadingUser } = useAuthQuery();
+  const {
+      currentUser, // Get currentUser to check isAdmin status reliably
+      isLoadingUser,
+      useAdminUsersInfinite,
+      updateLeaveBalancesAsync,
+      isUpdatingBalances,
+      errorUpdatingBalances
+    } = useAuthQuery();
 
   // --- Filter State ---
   const [searchInput, setSearchInput] = useState<string>('');
   const [activeSearchTerm, setActiveSearchTerm] = useState<string | null>(null);
 
+  // Check isAdmin status *after* user has loaded
+  const isAdmin = !!currentUser?.isAdmin;
+
   // Use the infinite query hook, passing the active search term
+  // It will be enabled/disabled internally based on the isAdmin flag passed to useAuthQuery
   const {
       data: usersPages,
       fetchNextPage,
       hasNextPage,
       isFetchingNextPage,
-      isLoading: isLoadingUsers, // Initial load state for the *current* filter
-      error: errorUsers,
-  } = useAdminUsersInfinite({ searchTerm: activeSearchTerm }); // Pass filter object
+      isLoading: isLoadingUsers, // Loading state specific to the users query
+      error: errorUsers, // Get refetch function if needed (e.g., after updates if invalidation fails)
+  } = useAdminUsersInfinite({ searchTerm: activeSearchTerm });
 
+  // --- Modal and Feedback State ---
   const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [pageFeedback, setPageFeedback] = useState<Feedback>(null); // Renamed for clarity
+  const [pageFeedback, setPageFeedback] = useState<Feedback>(null);
 
   // Flatten pages data for the table
   const allUsers = useMemo(() =>
@@ -77,20 +87,21 @@ export const AdminUsers = () => {
       e?.preventDefault();
       const trimmedSearch = searchInput.trim();
       setActiveSearchTerm(trimmedSearch ? trimmedSearch : null);
+      // Note: React Query automatically refetches when the query key changes (due to activeSearchTerm update)
   };
   const handleClearFilter = () => {
       setSearchInput('');
       setActiveSearchTerm(null);
+      // React Query refetches automatically
   };
 
-  // Handler to open the edit modal
+  // --- Modal Handlers ---
   const handleEditClick = (user: UserListItem) => {
     setSelectedUser(user);
     setIsModalOpen(true);
     setPageFeedback(null); // Clear feedback when opening modal
   };
 
-  // Handler to close the edit modal
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedUser(null);
@@ -103,6 +114,8 @@ export const AdminUsers = () => {
           await updateLeaveBalancesAsync({ userId, balances });
           setPageFeedback({ type: 'success', message: 'Leave balances updated successfully!' });
           handleCloseModal(); // Close modal on success
+          // Invalidation should happen automatically via useAuthQuery's onSuccess
+          // If not, uncomment: await refetchUsers();
       } catch (error) {
           setPageFeedback({ type: 'error', message: `Failed to update balances: ${getApiErrorMessage(error)}` });
           // Keep modal open on error
@@ -110,27 +123,34 @@ export const AdminUsers = () => {
   };
 
   // --- Render Logic ---
-  const isInitialLoading = isLoadingUsers && !usersPages; // True only on first load for a specific filter
-  const initialLoadError = errorUsers && !usersPages; // True only on first load error for a specific filter
-  const isOverallLoading = isLoadingUsers || isFetchingNextPage; // True during initial load or fetching more pages
-
-  // Safeguard check
-  if (!isAdmin && !isLoadingUser) { // Check isAdmin only after user loading is done
-    return <ErrorDisplay message="Access Denied. You do not have permission to view this page." />;
-  }
-  // Initial loading state for the *whole* page (before isAdmin check or user load)
+  // Loading state for the initial user fetch (to determine admin status)
   if (isLoadingUser) {
        return <div className="p-10 flex justify-center"><Loading size="lg" /></div>;
   }
 
+  // Check if user is admin *after* loading is complete
+  if (!isAdmin) {
+    return <div className="p-6"><ErrorDisplay message="Access Denied. You do not have permission to view this page." /></div>;
+  }
+
+  // Determine loading/error states specifically for the users list query
+  const isInitialUserListLoading = isLoadingUsers && !usersPages && !errorUsers; // True only on first load for a specific filter
+  const initialUserListError = errorUsers && !usersPages; // True only on first load error for a specific filter
+  const isOverallLoading = isLoadingUsers || isFetchingNextPage; // True during initial load or fetching more pages
+
   // Display initial error state if fetching users failed catastrophically
-  if (initialLoadError) {
-    return <div className="p-6"><ErrorDisplay message={getApiErrorMessage(errorUsers) || 'Failed to load users.'} /></div>;
+  if (initialUserListError) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl md:text-3xl font-bold mb-4">Admin Users</h1>
+        <ErrorDisplay message={getApiErrorMessage(errorUsers) || 'Failed to load users.'} />
+      </div>
+    );
   }
 
   // Main page content
   return (
-    <div className="space-y-6 md:space-y-8 relative">
+    <div className="space-y-6 md:space-y-8 relative"> {/* Add relative for toast positioning */}
       <FeedbackAlert feedback={pageFeedback} onClose={() => setPageFeedback(null)} />
 
       {/* Page Header */}
@@ -146,12 +166,12 @@ export const AdminUsers = () => {
                     <label className="form-control w-full sm:flex-1">
                         <div className="label pb-1"><span className="label-text">Filter by Name/Email</span></div>
                         <input
-                            type="search" // Use type="search" for potential browser features
+                            type="search"
                             placeholder="Search users..."
                             className="input input-bordered w-full"
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
-                            disabled={isOverallLoading} // Disable while any loading is happening
+                            disabled={isOverallLoading} // Disable while any user list loading is happening
                         />
                     </label>
                     <div className="flex gap-2 w-full sm:w-auto pt-2 sm:pt-0">
@@ -180,30 +200,41 @@ export const AdminUsers = () => {
       <div className="card bg-base-100 border border-base-300">
         <div className="card-body p-5 md:p-6">
             <h2 className="card-title mb-4 text-lg">
-                {activeSearchTerm ? `Filtered Users` : 'All Users'} ({isInitialLoading ? <span className="skeleton h-5 w-8 inline-block"></span> : totalCount})
+                {activeSearchTerm ? `Filtered User Balances` : 'All User Balances'} ({isInitialUserListLoading ? <span className="skeleton h-5 w-8 inline-block animate-pulse"></span> : totalCount})
             </h2>
 
-            {/* Initial Loading Skeleton */}
-            {isInitialLoading ? (
+            {/* Initial Loading Skeleton for User List */}
+            {isInitialUserListLoading ? (
                 <div className="overflow-x-auto">
                     <table className="table">
+                        {/* Skeleton Head - Updated for Taken columns */}
                         <thead>
                             <tr>
-                                <th className="w-2/5"><span className="skeleton h-4 w-24"></span></th>
-                                <th className="w-1/5"><span className="skeleton h-4 w-16"></span></th>
-                                <th className="w-1/5"><span className="skeleton h-4 w-16"></span></th>
-                                <th className="w-1/5"><span className="skeleton h-4 w-12"></span></th>
-                                <th className="w-auto"><span className="skeleton h-4 w-10"></span></th>
+                                <th className="w-1/4"><span className="skeleton h-4 w-24 animate-pulse"></span></th> {/* User */}
+                                <th className="w-1/6 text-right"><span className="skeleton h-4 w-16 inline-block animate-pulse"></span></th> {/* Annual Bal */}
+                                <th className="w-1/12 text-right"><span className="skeleton h-4 w-10 inline-block animate-pulse"></span></th> {/* Annual Taken */}
+                                <th className="w-1/6 text-right"><span className="skeleton h-4 w-16 inline-block animate-pulse"></span></th> {/* Sick Bal */}
+                                <th className="w-1/12 text-right"><span className="skeleton h-4 w-10 inline-block animate-pulse"></span></th> {/* Sick Taken */}
+                                <th className="w-1/6 text-right"><span className="skeleton h-4 w-16 inline-block animate-pulse"></span></th> {/* Special Bal */}
+                                <th className="w-1/12 text-right"><span className="skeleton h-4 w-10 inline-block animate-pulse"></span></th> {/* Special Taken */}
+                                <th className="w-auto text-right"><span className="skeleton h-4 w-10 inline-block animate-pulse"></span></th> {/* Actions */}
                             </tr>
                         </thead>
+                         {/* Skeleton Body - Updated */}
                          <tbody>
-                            {[1, 2, 3].map(i => (
+                            {[1, 2, 3, 4, 5].map(i => (
                                 <tr key={i}>
-                                    <td><span className="skeleton h-4 w-3/4"></span></td>
-                                    <td><span className="skeleton h-4 w-10"></span></td>
-                                    <td><span className="skeleton h-4 w-10"></span></td>
-                                    <td><span className="skeleton h-4 w-8"></span></td>
-                                    <td><span className="skeleton h-8 w-16"></span></td>
+                                    <td>
+                                        <div className="skeleton h-4 w-3/4 mb-1 animate-pulse"></div>
+                                        <div className="skeleton h-3 w-1/2 opacity-70 animate-pulse"></div>
+                                    </td>
+                                    <td className="text-right"><span className="skeleton h-4 w-8 inline-block animate-pulse"></span></td>
+                                    <td className="text-right"><span className="skeleton h-4 w-6 inline-block opacity-70 animate-pulse"></span></td>
+                                    <td className="text-right"><span className="skeleton h-4 w-8 inline-block animate-pulse"></span></td>
+                                    <td className="text-right"><span className="skeleton h-4 w-6 inline-block opacity-70 animate-pulse"></span></td>
+                                    <td className="text-right"><span className="skeleton h-4 w-8 inline-block animate-pulse"></span></td>
+                                    <td className="text-right"><span className="skeleton h-4 w-6 inline-block opacity-70 animate-pulse"></span></td>
+                                    <td className="text-right"><span className="skeleton h-8 w-8 inline-block animate-pulse"></span></td>
                                 </tr>
                             ))}
                         </tbody>
@@ -213,6 +244,7 @@ export const AdminUsers = () => {
                  <>
                      {/* Render table if users exist, otherwise show message */}
                      {allUsers.length > 0 ? (
+                        // UserListTable should now render the taken columns correctly
                         <UserListTable users={allUsers} onEdit={handleEditClick} />
                      ) : (
                         <p className="text-center py-8 text-base-content/70 italic">
@@ -250,7 +282,8 @@ export const AdminUsers = () => {
                      </div>
 
                     {/* Display subsequent fetch errors inline, if any */}
-                    {errorUsers && usersPages && !initialLoadError && ( // Show only if not the initial error
+                    {/* Show only if not the initial error and pages have been loaded */}
+                    {errorUsers && usersPages && !initialUserListError && (
                         <div className="mt-4">
                             <ErrorDisplay message={`Error fetching more users: ${getApiErrorMessage(errorUsers)}`} />
                         </div>
@@ -261,6 +294,7 @@ export const AdminUsers = () => {
       </div>
 
       {/* Edit Modal - Rendered conditionally */}
+      {/* Ensure EditLeaveBalancesModal only deals with editing balances, not taken days */}
       {selectedUser && (
           <EditLeaveBalancesModal
               isOpen={isModalOpen}
@@ -268,6 +302,7 @@ export const AdminUsers = () => {
               onClose={handleCloseModal}
               onSave={handleSaveBalances}
               isSaving={isUpdatingBalances}
+              // Pass the specific error from the update mutation, formatted
               updateError={errorUpdatingBalances ? getApiErrorMessage(errorUpdatingBalances) : null}
           />
       )}
