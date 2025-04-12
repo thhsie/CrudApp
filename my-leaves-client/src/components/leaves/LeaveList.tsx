@@ -85,8 +85,8 @@ export const LeaveList = ({
           </div>
       )}
 
-      {/* Leave Cards List */}
-      <div className="space-y-4">
+      {/* Leave Cards Grid */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {/* Handle initial loading/error states passed from parent */}
         {isLoading ? (
             <Loading />
@@ -99,7 +99,7 @@ export const LeaveList = ({
              <p className="text-center py-8 text-base-content/70 italic">No leave requests found.</p>
         ) : filteredLeaves.length === 0 ? (
              // Message if filters yield no results
-            <p className="text-center py-8 text-base-content/70 italic">No leave requests match the selected filter.</p>
+            <p className="text-center py-8 text-base-content/70 italic col-span-full">No leave requests match the selected filter.</p>
         ) : (
           // Render filtered leaves
           filteredLeaves.map((leave) => (

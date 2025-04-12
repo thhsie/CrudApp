@@ -111,6 +111,7 @@ public static class UsersApi
         group.MapGet("/all", async Task<Results<Ok<PaginatedResponse<UserListItemDto>>, UnauthorizedHttpResult>> (
             TodoDbContext db,
             CurrentUser currentUser,
+            [FromQuery] string? searchTerm,
             [AsParameters] PaginationRequest pagination) =>
         {
             if (!currentUser.IsAdmin)
@@ -121,6 +122,11 @@ public static class UsersApi
             var query = db.Users.Include(u => u.LeaveBalances).AsNoTracking(); // Include balances
 
             var totalCount = await query.CountAsync();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                query = query.Where(u => (!string.IsNullOrEmpty(u.Email) && u.Email.Contains(searchTerm)) || (!string.IsNullOrEmpty(u.UserName) && u.UserName.Contains(searchTerm)));
+            }
 
             var users = await query
                 .OrderBy(u => u.Email) // Or UserName

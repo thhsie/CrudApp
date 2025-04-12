@@ -9,13 +9,26 @@ import { Loading } from '../components/ui/Loading';
 import { getApiErrorMessage } from '../services/authService';
 
 // Re-define or import FeedbackAlert component here (same as in AdminUsers.tsx etc.)
-const FeedbackAlert = ({ feedback, onClose }: { feedback: Feedback; onClose: () => void }) => {
-    if (!feedback) return null;
-    const alertClass = feedback.type === 'success' ? 'alert-success' : 'alert-error';
+const FeedbackAlert = ({ feedback, onClose }: { feedback: Feedback | null; onClose: () => void }) => {
+    // Moved useEffect outside conditional return
     useEffect(() => {
-        const timer = setTimeout(() => { onClose(); }, 5000);
-        return () => clearTimeout(timer);
-    }, [feedback, onClose]);
+        let timer: NodeJS.Timeout | undefined;
+        if (feedback) {
+            timer = setTimeout(() => {
+                onClose();
+            }, 5000);
+        }
+        // Cleanup function
+        return () => {
+            if (timer) {
+                clearTimeout(timer);
+            }
+        };
+    }, [feedback, onClose]); // Dependencies remain the same
+
+    if (!feedback) return null; // Conditional return is okay here
+
+    const alertClass = feedback.type === 'success' ? 'alert-success' : 'alert-error';
 
     return (
         <div className="toast toast-end toast-bottom z-50 p-4">
@@ -30,7 +43,7 @@ const FeedbackAlert = ({ feedback, onClose }: { feedback: Feedback; onClose: () 
 
 export const Dashboard = () => {
   const { user } = useAuth();
-  const [pageFeedback, setPageFeedback] = useState<Feedback>(null); // State for feedback
+  const [pageFeedback, setPageFeedback] = useState<Feedback | null>(null); // State for feedback
   const {
     useUserLeavesInfinite,
     deleteLeave,
@@ -94,7 +107,7 @@ export const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-6 md:space-y-8 relative"> {/* Add relative for toast */}
+    <div className="space-y-6 md:space-y-8 relative">
         {/* Feedback Alert Display */}
         <FeedbackAlert feedback={pageFeedback} onClose={() => setPageFeedback(null)} />
 
@@ -138,11 +151,30 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* Grid for Recent Leaves & Quick Actions */}
-       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+      {/* Container for Quick Actions & Recent Leaves (Always Vertical) */}
+       <div className="flex flex-col gap-6 md:gap-8">
 
-        {/* Recent Leaves Section */}
-        <div className="lg:col-span-2 card bg-base-100  border border-base-300">
+        {/* Quick Actions Section (Moved Up) */}
+        <div className="card bg-base-100 border border-base-300"> {/* Removed lg:w-80 */}
+            <div className="card-body">
+            <h2 className="card-title mb-4">Quick Actions</h2>
+            {/* Standard flex layout for buttons */}
+            <div className="flex flex-col sm:flex-row gap-3"> {/* Removed join, added gap */}
+                <Link to="/user/leaves" state={{ showForm: true }} className="btn btn-primary w-full sm:w-auto"> {/* Removed join-item, adjusted width */}
+                    Request New Leave
+                </Link>
+                <Link to="/user/leaves" className="btn btn-ghost w-full sm:w-auto"> {/* Changed btn-outline to btn-ghost, removed join-item, adjusted width */}
+                    Manage My Leaves
+                </Link>
+                 <Link to="/profile" className="btn btn-ghost w-full sm:w-auto"> {/* Changed btn-outline to btn-ghost, removed join-item, adjusted width */}
+                    My Profile
+                </Link>
+            </div>
+            </div>
+        </div>
+
+        {/* Recent Leaves Section (Moved Down) */}
+        <div className="flex-1 card bg-base-100 border border-base-300"> {/* flex-1 remains */}
             <div className="card-body">
             <div className="flex justify-between items-center mb-4">
                  <h2 className="card-title">Recent Leave Requests</h2>
@@ -177,24 +209,7 @@ export const Dashboard = () => {
             </div>
         </div>
 
-        {/* Quick Actions Section */}
-        <div className="lg:col-span-1 card bg-base-100 border border-base-300">
-            <div className="card-body">
-            <h2 className="card-title mb-4">Quick Actions</h2>
-            <div className="flex flex-col gap-3">
-                <Link to="/user/leaves" state={{ showForm: true }} className="btn btn-primary w-full">
-                    Request New Leave
-                </Link>
-                <Link to="/user/leaves" className="btn btn-outline w-full">
-                    Manage My Leaves
-                </Link>
-                 <Link to="/profile" className="btn btn-outline w-full">
-                    My Profile
-                </Link>
-            </div>
-            </div>
-        </div>
-      </div>
+      </div> {/* End of vertical container */}
     </div>
   );
 };
