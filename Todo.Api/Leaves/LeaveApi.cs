@@ -191,6 +191,18 @@ internal static class LeaveApi
 
         group.MapPost("/", async Task<Results<Created<LeaveItem>, BadRequest<string>>> (TodoDbContext db, LeaveItem newLeave, CurrentUser owner) =>
         {
+            // Check if user already has a pending leave that overlaps with the new one
+            var overlappingLeave = await db.Leaves
+                .AnyAsync(l => l.OwnerId == owner.Id &&
+                               l.Status == LeaveStatus.Pending &&
+                               l.StartDate <= newLeave.EndDate &&
+                               newLeave.StartDate <= l.EndDate);
+
+            if (overlappingLeave)
+            {
+                return TypedResults.BadRequest("You already have a pending leave request that overlaps with this period.");
+            }
+
             // IMPORTANT: Add +1 if EndDate is inclusive of the leave period
             var leaveDays = (int)(newLeave.EndDate - newLeave.StartDate).TotalDays + 1;
             if (!owner.User.HasSufficientLeaveBalance(newLeave.Type, leaveDays))
@@ -233,7 +245,7 @@ internal static class LeaveApi
             }
 
             // Check balance before updating
-            var leaveDays = (int)(leaveItem.EndDate - leaveItem.StartDate).TotalDays;
+            var leaveDays = (int)(leaveItem.EndDate - leaveItem.StartDate).TotalDays + 1;
             if (!owner.User.HasSufficientLeaveBalance(leaveItem.Type, leaveDays))
             {
                 return TypedResults.BadRequest("Insufficient leave balance for the updated request.");
@@ -297,7 +309,7 @@ internal static class LeaveApi
             if (!leave.Approve(user))
             {
                 // Approval logic might fail (e.g., start date passed)
-                return TypedResults.BadRequest("Could not approve leave request.");
+                return TypedResults.BadRequest("Either start date passed or insufficient leave balance.");
             }
 
             await db.SaveChangesAsync();
@@ -326,7 +338,7 @@ internal static class LeaveApi
 
             if (!leave.Reject(user))
             {
-                return TypedResults.BadRequest("Could not reject leave request.");
+                return TypedResults.BadRequest("Start date passed.");
             }
 
             await db.SaveChangesAsync();

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { LeaveRequestData, LeaveType } from '../../types/leave';
 import { ErrorDisplay } from '../ui/ErrorDisplay';
 import { DayPicker } from 'react-day-picker';
-import { addDays, format, isValid, parse } from 'date-fns';
+import { format, isValid, parse } from 'date-fns';
 import 'react-day-picker/dist/style.css';
 
 interface LeaveFormProps {

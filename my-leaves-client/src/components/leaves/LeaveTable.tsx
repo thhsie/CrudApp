@@ -1,6 +1,6 @@
 import { Leave, LeaveStatus, LeaveType } from '../../types/leave';
 import { LeaveStatusBadge } from './LeaveStatusBadge';
-import { FaCheck, FaTimes, FaTrash } from 'react-icons/fa';
+import { FaCheck, FaTimes } from 'react-icons/fa';
 
 // Helper function (copied from AdminDashboard)
 const formatDate = (dateString: string | Date): string => {
@@ -145,21 +145,21 @@ export const LeaveTable = ({
                                                 {isApproving ? <span className="loading loading-spinner loading-xs"></span> : <FaCheck />}
                                             </button>
                                             <button
-                                                className="btn btn-xs btn-ghost join-item text-warning tooltip tooltip-left" data-tip="Reject"
+                                                className="btn btn-xs btn-ghost join-item text-error tooltip tooltip-left" data-tip="Reject"
                                                 onClick={() => setConfirmState({ isOpen: true, type: 'reject', leaveId: leave.id })}
                                                 disabled={isApproving || isRejecting || isDeleting}
                                             >
                                                 {isRejecting ? <span className="loading loading-spinner loading-xs"></span> : <FaTimes />}
                                             </button>
+                                            {/* <button
+                                                className="btn btn-xs btn-ghost join-item text-error tooltip tooltip-left" data-tip="Delete"
+                                                onClick={() => setConfirmState({ isOpen: true, type: 'delete', leaveId: leave.id })}
+                                                disabled={isApproving || isRejecting || isDeleting}
+                                            >
+                                                {isDeleting ? <span className="loading loading-spinner loading-xs"></span> : <FaTrash />}
+                                            </button> */}
                                         </>
                                     )}
-                                    <button
-                                        className="btn btn-xs btn-ghost join-item text-error tooltip tooltip-left" data-tip="Delete"
-                                        onClick={() => setConfirmState({ isOpen: true, type: 'delete', leaveId: leave.id })}
-                                        disabled={isApproving || isRejecting || isDeleting}
-                                    >
-                                        {isDeleting ? <span className="loading loading-spinner loading-xs"></span> : <FaTrash />}
-                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -179,7 +179,7 @@ export const LeaveTable = ({
                 }}
                 title={confirmState.type === 'delete' ? 'Delete Leave Request' : confirmState.type === 'approve' ? 'Approve Leave Request' : 'Reject Leave Request'}
                 confirmText={confirmState.type === 'delete' ? 'Delete' : confirmState.type === 'approve' ? 'Approve' : 'Reject'}
-                confirmButtonClass={confirmState.type === 'delete' ? 'btn-error' : confirmState.type === 'approve' ? 'btn-success' : 'btn-warning'}
+                confirmButtonClass={confirmState.type === 'delete' ? 'btn-error' : confirmState.type === 'approve' ? 'btn-success' : 'btn-error'}
                 isLoading={isApproving || isRejecting || isDeleting}
             >
                 {confirmState.type === 'delete' ? 'Are you sure you want to delete this leave request?' :
