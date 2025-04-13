@@ -1,4 +1,4 @@
-import { Leave } from '../../types/leave';
+import { Leave, LeaveStatus } from '../../types/leave';
 import { LeaveStatusBadge } from './LeaveStatusBadge';
 import { FaTimes, FaTrash } from 'react-icons/fa';
 
@@ -121,6 +121,7 @@ export const UserLeaveTable = ({
                             <td><LeaveStatusBadge status={leave.status} /></td>
                             <td className="text-right">
                                 <div className="join">
+                                    {leave.status === LeaveStatus.Pending && (
                                     <button
                                         className="btn btn-xs btn-ghost join-item text-error tooltip tooltip-left" data-tip="Delete"
                                         onClick={() => setConfirmState({ isOpen: true, leaveId: leave.id })}
@@ -128,6 +129,7 @@ export const UserLeaveTable = ({
                                     >
                                         {isDeleting ? <span className="loading loading-spinner loading-xs"></span> : <FaTrash />}
                                     </button>
+                                    )}
                                 </div>
                             </td>
                         </tr>
