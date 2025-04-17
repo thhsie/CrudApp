@@ -145,7 +145,7 @@ export const AdminDashboard = () => {
             <div className="stat">
                 <div className="stat-title text-base-content/70">Pending Approval</div>
                 <div className="stat-value text-warning">{isInitialLoading ? <span className="skeleton h-8 w-10"></span> : counts.pending}</div>
-                <div className="stat-desc text-xs text-warning">{!isInitialLoading && counts.pending > 0 ? `${counts.pending} require action` : ''}</div>
+                <div className="stat-desc text-xs">{!isInitialLoading && counts.pending > 0 ? `${counts.pending} require(s) action` : ''}</div>
             </div>
              <div className="stat">
                 <div className="stat-title text-base-content/70">Approved</div>
