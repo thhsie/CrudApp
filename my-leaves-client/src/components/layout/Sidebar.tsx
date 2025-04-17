@@ -4,7 +4,7 @@ import {
     FaTachometerAlt,
     FaCalendarAlt,
     // FaUserShield,
-    FaLeaf,
+    // FaLeaf,
     FaUsersCog,
     FaUserCircle,
 } from 'react-icons/fa';
@@ -15,7 +15,7 @@ export const Sidebar = () => {
   // Helper for NavLink classes
   const getNavLinkClass = ({ isActive }: { isActive: boolean }): string => {
     const baseClasses = "flex items-center gap-3 p-3 transition-colors duration-150 ";
-    const activeClasses = "bg-primary text-primary-content";
+    const activeClasses = "bg-primary text-primary-content shadow-md";
     return `${baseClasses} ${isActive ? activeClasses : ''}`;
   };
 
@@ -35,7 +35,7 @@ export const Sidebar = () => {
                 className="btn btn-ghost justify-start text-xl font-bold h-auto px-2 py-3 normal-case hover:bg-transparent focus:bg-transparent"
                 aria-label="Go to homepage"
             >
-                <FaLeaf className="text-primary text-2xl mr-2" /> MyLeaves
+                <img src='src/assets/logo.svg' className="text-primary text-2xl mr-2" /> MyLeaves
             </NavLink>
          </li>
          {/* <li className="mb-4 mt-1 flex justify-center">

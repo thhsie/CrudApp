@@ -10,42 +10,42 @@ public class TodoUser : IdentityUser
     #region Leave balances
     public LeaveBalances LeaveBalances { get; private set; } = null!;
 
-    public void SetLeaveBalances(int paidLeavesBalance, int sickLeavesBalance, int specialLeavesBalance)
+    public void SetLeaveBalances(decimal paidLeavesBalance, decimal sickLeavesBalance, decimal specialLeavesBalance)
     {
         LeaveBalances = new LeaveBalances(paidLeavesBalance, sickLeavesBalance, specialLeavesBalance);
     }
 
-    public void IncreaseAnnualLeaves(int amount)
+    public void IncreaseAnnualLeaves(decimal amount)
     {
         LeaveBalances.IncreaseAnnualLeaves(amount);
     }
 
-    public bool DecreaseAnnualLeaves(int amount)
+    public bool DecreaseAnnualLeaves(decimal amount)
     {
         return LeaveBalances.DecreaseAnnualLeaves(amount);
     }
 
-    public void IncreaseSickLeaves(int amount)
+    public void IncreaseSickLeaves(decimal amount)
     {
         LeaveBalances.IncreaseSickLeaves(amount);
     }
 
-    public bool DecreaseSickLeaves(int amount)
+    public bool DecreaseSickLeaves(decimal amount)
     {
         return LeaveBalances.DecreaseSickLeaves(amount);
     }
 
-    public void IncreaseSpecialLeaves(int amount)
+    public void IncreaseSpecialLeaves(decimal amount)
     {
         LeaveBalances.IncreaseSpecialLeaves(amount);
     }
 
-    public bool DecreaseSpecialLeaves(int amount)
+    public bool DecreaseSpecialLeaves(decimal amount)
     {
         return LeaveBalances.DecreaseSpecialLeaves(amount);
     }
 
-    public bool HasSufficientLeaveBalance(int leaveType, int days)
+    public bool HasSufficientLeaveBalance(decimal leaveType, decimal days)
     {
         if (LeaveBalances == null)
         {
@@ -99,17 +99,17 @@ public class UserRole
 // DTO for Taken Leave Counts
 public class LeavesTakenDto
 {
-    public int AnnualLeavesTaken { get; set; }
-    public int SickLeavesTaken { get; set; }
-    public int SpecialLeavesTaken { get; set; }
+    public decimal AnnualLeavesTaken { get; set; }
+    public decimal SickLeavesTaken { get; set; }
+    public decimal SpecialLeavesTaken { get; set; }
 }
 
 // DTO for Leave Balances
 public class LeaveBalancesDto
 {
-    public int AnnualLeavesBalance { get; set; }
-    public int SickLeavesBalance { get; set; }
-    public int SpecialLeavesBalance { get; set; }
+    public decimal AnnualLeavesBalance { get; set; }
+    public decimal SickLeavesBalance { get; set; }
+    public decimal SpecialLeavesBalance { get; set; }
 }
 
 // UPDATE the UserListItemDto to include both balances and taken counts

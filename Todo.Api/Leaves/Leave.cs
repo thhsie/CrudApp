@@ -10,6 +10,8 @@ public class Leave
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public LeaveStatus Status { get; private set; } = LeaveStatus.Pending;
+    public bool IsStartHalfDay { get; set; } = false;
+    public bool IsEndHalfDay { get; set; } = false;
 
     public bool Approve(TodoUser user)
     {
@@ -19,7 +21,7 @@ public class Leave
         }
 
         bool balanceUpdated = false;
-        int leaveDays = CalculateLeaveDays();
+        var leaveDays = CalculateLeaveDuration();
 
         switch (Type)
         {
@@ -55,7 +57,7 @@ public class Leave
 
         if (Status == LeaveStatus.Approved)
         {
-            int leaveDays = CalculateLeaveDays();
+            var leaveDays = CalculateLeaveDuration();
 
             switch (Type)
             {
@@ -75,10 +77,37 @@ public class Leave
         return true;
     }
 
-    private int CalculateLeaveDays()
+    public decimal CalculateLeaveDuration()
     {
-        // IMPORTANT: Add +1 if EndDate is inclusive of the leave period
-        return (int)(EndDate - StartDate).TotalDays + 1;
+        // Ensure start is not after end (should be validated elsewhere too)
+        if (StartDate.Date > EndDate.Date) return 0m;
+
+        // Single Day Leave
+        if (StartDate.Date == EndDate.Date)
+        {
+            // If either (but not both) is marked as half, it's 0.5 days.
+            // If neither is marked, it's 1.0 day.
+            // Marking both as half on a single day is invalid but could default to 0.5 or 1.0 - let's treat as 0.5.
+            return (IsStartHalfDay || IsEndHalfDay) ? 0.5m : 1.0m;
+        }
+
+        // Multi-Day Leave
+        decimal duration = 0m;
+
+        // Calculate duration for the start day
+        duration += IsStartHalfDay ? 0.5m : 1.0m;
+
+        // Calculate duration for the end day (only if EndDate is after StartDate)
+        duration += IsEndHalfDay ? 0.5m : 1.0m;
+
+        // Calculate full days in between
+        int fullDaysBetween = (int)(EndDate.Date - StartDate.Date).TotalDays - 1;
+        if (fullDaysBetween > 0)
+        {
+            duration += fullDaysBetween;
+        }
+
+        return duration;
     }
 }
 
@@ -98,6 +127,11 @@ public class LeaveItem
     public LeaveStatus Status { get; set; }
 
     public string? OwnerEmail { get; set; }
+
+    public bool IsStartHalfDay { get; set; }
+    public bool IsEndHalfDay { get; set; }
+    // Optional: Add calculated duration if useful for frontend
+    // public decimal Duration { get; set; }
 }
 
 public static class LeaveMappingExtensions
@@ -110,7 +144,9 @@ public static class LeaveMappingExtensions
             Type = leave.Type,
             StartDate = leave.StartDate,
             EndDate = leave.EndDate,
-            Status = leave.Status
+            Status = leave.Status,
+            IsStartHalfDay = leave.IsStartHalfDay,
+            IsEndHalfDay = leave.IsEndHalfDay
             // OwnerEmail will now be set by projection in the API layer
         };
     }
@@ -120,5 +156,7 @@ public static class LeaveMappingExtensions
         leave.Type = leaveItem.Type;
         leave.StartDate = leaveItem.StartDate;
         leave.EndDate = leaveItem.EndDate;
+        leave.IsStartHalfDay = leaveItem.IsStartHalfDay;
+        leave.IsEndHalfDay = leaveItem.IsEndHalfDay;
     }
 }

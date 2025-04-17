@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Leave, LeaveStatus, LeaveType } from '../../types/leave';
 import { LeaveStatusBadge } from './LeaveStatusBadge';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
-import { formatDate } from '../../utils/dateUtils';
+import { formatLeaveDate } from '../../utils/dateUtils';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface LeaveCardProps {
@@ -75,12 +75,12 @@ export const LeaveCard = ({
             <div>
               <p className="text-xs uppercase tracking-wider text-base-content/60 mb-0.5">Start Date</p>
               {/* Ensure consistent small text */}
-              <p className="font-medium text-xs">{formatDate(leave.startDate)}</p>
+              <p className="font-medium text-xs">{formatLeaveDate(leave.startDate, leave.isStartHalfDay, 'start')}</p>
             </div>
             <div>
                <p className="text-xs uppercase tracking-wider text-base-content/60 mb-0.5">End Date</p>
                {/* Ensure consistent small text */}
-              <p className="font-medium text-xs">{formatDate(leave.endDate)}</p>
+              <p className="font-medium text-xs">{formatLeaveDate(leave.endDate, leave.isEndHalfDay, 'end')}</p>
             </div>
           </div>
 

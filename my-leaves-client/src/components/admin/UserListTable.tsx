@@ -14,7 +14,7 @@ const renderLeaveStat = (balance: number | undefined | null, taken: number | und
 
   // Handle balance display, applying color only if it's a valid number
   const displayBalanceElement = typeof balance === 'number'
-    ? <span className="text-success">{balance}</span> // Apply success color
+    ? <span className="text-success">{balance.toFixed(1)}</span> // Apply success color
     : <span className="text-xs italic opacity-50">N/A</span>; // Render 'N/A' without success color
 
   return (
@@ -25,7 +25,7 @@ const renderLeaveStat = (balance: number | undefined | null, taken: number | und
       </div>
       {/* Taken: Keep base style for "Taken:", apply error color only to the number */}
       <div className="text-xs text-base-content/60 tabular-nums">
-        Taken: <span className="text-error font-medium">{displayTaken}</span>
+        Taken: <span className="text-error font-medium">{displayTaken.toFixed(1)}</span>
       </div>
     </div>
   );

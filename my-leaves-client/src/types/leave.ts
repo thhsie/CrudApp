@@ -17,19 +17,24 @@ export enum LeaveStatus {
 
 /** Data required to create/update a leave request via API */
 export interface LeaveRequestData {
-    startDate: string; // Should be YYYY-MM-DD format string
-    endDate: string;   // Should be YYYY-MM-DD format string
-    type: LeaveType;   // The numeric enum value
-  }
+  startDate: string; // YYYY-MM-DD
+  endDate: string;   // YYYY-MM-DD
+  type: LeaveType;
+  isStartHalfDay: boolean;
+  isEndHalfDay: boolean;
+}
 
 /** Matches the LeaveItem DTO returned by the backend API */
 export interface Leave {
-    id: number;
-    type: LeaveType; // Numeric enum value
-    startDate: string; // Date string from API (e.g., ISO 8601)
-    endDate: string;   // Date string from API (e.g., ISO 8601)
-    status: LeaveStatus; // Numeric enum value
-    ownerEmail: string;
+  id: number;
+  type: LeaveType;
+  startDate: string; // ISO Date string
+  endDate: string;   // ISO Date string
+  status: LeaveStatus;
+  ownerEmail: string;
+  isStartHalfDay: boolean;
+  isEndHalfDay: boolean;
+  // Optional: duration?: number;
 }
 
 /** Matches the PaginatedResponse<LeaveItem> from the backend API */

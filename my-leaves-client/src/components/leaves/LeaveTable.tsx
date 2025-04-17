@@ -1,19 +1,9 @@
 import { Leave, LeaveStatus, LeaveType } from '../../types/leave';
 import { LeaveStatusBadge } from './LeaveStatusBadge';
 import { FaCheck, FaTimes } from 'react-icons/fa';
-
-// Helper function (copied from AdminDashboard)
-const formatDate = (dateString: string | Date): string => {
-    try {
-        return new Intl.DateTimeFormat('en-CA', { // YYYY-MM-DD format
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-        }).format(new Date(dateString));
-    } catch {
-        return 'Invalid Date';
-    }
-};
+import { useState } from 'react';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { formatLeaveDate } from '../../utils/dateUtils';
 
 // Define props for the component
 interface LeaveTableProps {
@@ -26,12 +16,6 @@ interface LeaveTableProps {
     isDeleting: boolean;
 }
 
-import { useState, useMemo } from 'react';
-import { FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
-import { ConfirmDialog } from '../ui/ConfirmDialog';
-
-type LeaveSortKey = 'startDate' | 'endDate' | 'none';
-
 export const LeaveTable = ({
     leaves,
     onApprove,
@@ -41,42 +25,11 @@ export const LeaveTable = ({
     isRejecting,
     isDeleting
 }: LeaveTableProps) => {
-    const [sortConfig, setSortConfig] = useState<{ key: LeaveSortKey; direction: 'asc' | 'desc' }>({
-        key: 'none',
-        direction: 'asc'
-    });
     const [confirmState, setConfirmState] = useState<{
         isOpen: boolean;
         type: 'approve' | 'reject' | 'delete' | null;
         leaveId: number | null;
     }>({ isOpen: false, type: null, leaveId: null });
-
-    const sortedLeaves = useMemo(() => {
-        if (!leaves) return [];
-        if (sortConfig.key === 'none') return leaves;
-        return [...leaves].sort((a, b) => {
-            const sortKey = sortConfig.key as 'startDate' | 'endDate';
-            const aValue = a[sortKey];
-            const bValue = b[sortKey];
-
-            if (aValue === undefined || bValue === undefined) return 0;
-
-            if (aValue < bValue) {
-                return sortConfig.direction === 'asc' ? -1 : 1;
-            }
-            if (aValue > bValue) {
-                return sortConfig.direction === 'asc' ? 1 : -1;
-            }
-            return 0;
-        });
-    }, [leaves, sortConfig]);
-
-    const handleSort = (key: Exclude<LeaveSortKey, 'none'>) => {
-        setSortConfig(prevConfig => ({
-            key,
-            direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
-        }));
-    };
 
     if (!leaves || leaves.length === 0) {
         return null;
@@ -90,32 +43,12 @@ export const LeaveTable = ({
                         <th>User</th>
                         <th>
                             <div className="flex items-center gap-1">
-                                <button onClick={() => handleSort('startDate')} className="flex items-center gap-1">
                                     Start Date
-                                    {sortConfig.key === 'startDate' ? (
-                                        sortConfig.direction === 'asc' ? <FaSortUp /> : <FaSortDown />
-                                    ) : <FaSort />}
-                                </button>
-                                {sortConfig.key === 'startDate' && (
-                                    <button onClick={() => setSortConfig({ key: 'none', direction: 'asc' })} className="btn btn-xs btn-ghost p-0">
-                                        <FaTimes />
-                                    </button>
-                                )}
                             </div>
                         </th>
                         <th>
                             <div className="flex items-center gap-1">
-                                <button onClick={() => handleSort('endDate')} className="flex items-center gap-1">
                                     End Date
-                                    {sortConfig.key === 'endDate' ? (
-                                        sortConfig.direction === 'asc' ? <FaSortUp /> : <FaSortDown />
-                                    ) : <FaSort />}
-                                </button>
-                                {sortConfig.key === 'endDate' && (
-                                    <button onClick={() => setSortConfig({ key: 'none', direction: 'asc' })} className="btn btn-xs btn-ghost p-0">
-                                        <FaTimes />
-                                    </button>
-                                )}
                             </div>
                         </th>
                         <th>Type</th>
@@ -124,13 +57,13 @@ export const LeaveTable = ({
                     </tr>
                 </thead>
                 <tbody>
-                    {sortedLeaves.map((leave: Leave) => (
+                    {leaves.map((leave: Leave) => (
                         <tr key={leave.id} className="hover">
                             <td>
                                 <div className="text-sm">{leave.ownerEmail}</div>
                             </td>
-                            <td>{formatDate(leave.startDate)}</td>
-                            <td>{formatDate(leave.endDate)}</td>
+                            <td>{formatLeaveDate(leave.startDate, leave.isStartHalfDay, 'start')}</td>
+                            <td>{formatLeaveDate(leave.endDate, leave.isEndHalfDay, 'end')}</td>
                             <td>{LeaveType[leave.type]}</td>
                             <td><LeaveStatusBadge status={leave.status} /></td>
                             <td className="text-right">

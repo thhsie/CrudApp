@@ -21,9 +21,9 @@ public class TodoDbContext(DbContextOptions<TodoDbContext> options) : IdentityDb
         {
             b.OwnsOne(e => e.LeaveBalances, lb =>
             {
-                lb.Property(l => l.AnnualLeavesBalance).HasDefaultValue(0);
-                lb.Property(l => l.SickLeavesBalance).HasDefaultValue(0);
-                lb.Property(l => l.SpecialLeavesBalance).HasDefaultValue(0);
+                lb.Property(l => l.AnnualLeavesBalance).HasColumnType("decimal(5, 1)").HasDefaultValue(0.0m); // Example: 5 total digits, 1 decimal place
+                lb.Property(l => l.SickLeavesBalance).HasColumnType("decimal(5, 1)").HasDefaultValue(0.0m);
+                lb.Property(l => l.SpecialLeavesBalance).HasColumnType("decimal(5, 1)").HasDefaultValue(0.0m);
             });
         });
 
