@@ -48,7 +48,7 @@ const FeedbackAlert = ({ feedback, onClose }: { feedback: Feedback | null; onClo
 export const LeaveManagement = () => {
   const location = useLocation();
   const [isFormVisible, setIsFormVisible] = useState(location.state?.showForm === true);
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('table'); // State for view mode
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card'); // State for view mode
   const [pageFeedback, setPageFeedback] = useState<Feedback>(null); // State for feedback messages
 
   // Use the specific infinite query hook for user leaves
@@ -148,7 +148,7 @@ export const LeaveManagement = () => {
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <h1 className="text-2xl md:text-3xl font-bold">Your leave requests</h1>
         <button
-          className={`btn ${isFormVisible ? 'btn-outline btn-warning' : 'btn-primary'} min-w-[180px]`}
+          className={`btn ${isFormVisible ? 'btn-outline btn-error' : 'btn-primary'} min-w-[180px]`}
           onClick={() => setIsFormVisible(!isFormVisible)}
           aria-expanded={isFormVisible}
           aria-controls="leave-request-form"

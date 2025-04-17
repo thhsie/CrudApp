@@ -180,7 +180,10 @@ export const Login = () => {
 
         {/* Hero Text (visible on larger screens) */}
         <div className="text-center lg:text-left lg:block hidden">
-           <h1 className="text-4xl lg:text-5xl font-bold text-base-content opacity-90">Streamline Your Time Off</h1>
+          <div className="flex justify-center mb-8">
+            <img src='src/assets/logo.svg' height={100} width={100} />
+          </div>
+          <h1 className="text-4xl lg:text-5xl font-bold text-base-content opacity-90">Streamline Your Time Off</h1>
           <p className="py-6 max-w-md text-base-content/70">
             Access your account to easily manage leave requests, track balances,
             and stay organized with your time away.

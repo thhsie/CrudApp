@@ -64,7 +64,7 @@ export const Profile = () => {
             {/* User Details */}
             <div className="text-center sm:text-left">
                 <h2 className="card-title text-xl md:text-2xl">{user.email}</h2>
-                <p className="text-base-content/70 text-sm mt-1">User ID: {user.id}</p>
+                {user.isAdmin && <p className="text-base-content/70 text-sm mt-1">User ID: {user.id}</p>}
                 {user.isAdmin ? (
                      <div className="badge badge-secondary badge-outline mt-2">Administrator</div>
                 ) : (
@@ -82,17 +82,17 @@ export const Profile = () => {
                 <div className="stats stats-vertical sm:stats-horizontal w-full">
                     <div className="stat">
                         <div className="stat-title">Annual</div>
-                        <div className="stat-value text-primary">{user.leaveBalances.annualLeavesBalance}</div>
+                        <div className="stat-value text-primary">{user.leaveBalances.annualLeavesBalance.toFixed(1)}</div>
                         <div className="stat-desc">Days remaining</div>
                     </div>
                     <div className="stat">
                         <div className="stat-title">Sick</div>
-                        <div className="stat-value text-info">{user.leaveBalances.sickLeavesBalance}</div>
+                        <div className="stat-value text-info">{user.leaveBalances.sickLeavesBalance.toFixed(1)}</div>
                          <div className="stat-desc">Days remaining</div>
                     </div>
                     <div className="stat">
                         <div className="stat-title">Special</div>
-                        <div className="stat-value text-accent">{user.leaveBalances.specialLeavesBalance}</div>
+                        <div className="stat-value text-accent">{user.leaveBalances.specialLeavesBalance.toFixed(1)}</div>
                          <div className="stat-desc">Days remaining</div>
                     </div>
                 </div>

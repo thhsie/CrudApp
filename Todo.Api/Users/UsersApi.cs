@@ -108,7 +108,8 @@ public static class UsersApi
             });
         }).RequireAuthorization(pb => pb.RequireCurrentUser());
 
-        group.MapGet("/all", async Task<Results<Ok<PaginatedResponse<UserListItemDto>>, UnauthorizedHttpResult>> (
+        // GET /users/all (Admin - Paginated User List with Balances and Taken Leaves)
+        group.MapGet("/all", async Task<Results<Ok<PaginatedResponse<UserListItemDto>>, UnauthorizedHttpResult, BadRequest<string>>> (
             TodoDbContext db,
             CurrentUser currentUser,
             [FromQuery] string? searchTerm,
@@ -119,15 +120,13 @@ public static class UsersApi
                 return TypedResults.Unauthorized();
             }
 
-            // Base query for users
             var userQuery = db.Users
-                .Include(u => u.LeaveBalances) // Include balances
+                .Include(u => u.LeaveBalances)
                 .AsNoTracking();
 
-            // Apply search filter *before* counting for accurate totalCount
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                var lowerSearchTerm = searchTerm.ToLowerInvariant(); // Optimize for case-insensitive search
+                var lowerSearchTerm = searchTerm.ToLowerInvariant();
                 userQuery = userQuery.Where(u =>
                     (u.Email != null && u.Email.ToLower().Contains(lowerSearchTerm)) ||
                     (u.UserName != null && u.UserName.ToLower().Contains(lowerSearchTerm))
@@ -137,23 +136,23 @@ public static class UsersApi
             // Get the total count *after* filtering
             var totalCount = await userQuery.CountAsync();
 
-            // Apply pagination and select initial user data
+            // Fetch base user data for the current page
             var users = await userQuery
-                .OrderBy(u => u.Email ?? u.UserName) // Ensure consistent ordering
+                .OrderBy(u => u.Email ?? u.UserName)
                 .Skip((pagination.PageNumber - 1) * pagination.PageSize)
                 .Take(pagination.PageSize)
-                .Select(u => new UserListItemDto
+                .Select(u => new UserListItemDto // Project to DTO
                 {
                     Id = u.Id,
                     Email = u.Email,
                     UserName = u.UserName,
-                    LeaveBalances = u.LeaveBalances != null ? new LeaveBalancesDto
+                    LeaveBalances = u.LeaveBalances != null ? new LeaveBalancesDto // Map balances
                     {
                         AnnualLeavesBalance = u.LeaveBalances.AnnualLeavesBalance,
                         SickLeavesBalance = u.LeaveBalances.SickLeavesBalance,
                         SpecialLeavesBalance = u.LeaveBalances.SpecialLeavesBalance
                     } : null,
-                    LeavesTaken = null // Initialize as null, will populate next
+                    LeavesTaken = null // Initialize LeavesTaken, will populate next
                 })
                 .ToListAsync();
 
@@ -162,38 +161,48 @@ public static class UsersApi
             {
                 var userIds = users.Select(u => u.Id).ToList();
 
-                // Query approved leaves for the users on the current page
-                var approvedLeaves = await db.Leaves
+                // 1. Fetch necessary data for approved leaves for users on this page
+                var approvedLeavesData = await db.Leaves
                     .Where(l => userIds.Contains(l.OwnerId) && l.Status == LeaveStatus.Approved)
-                    .Select(l => new { l.OwnerId, l.Type, l.StartDate, l.EndDate }) // Select only needed fields
-                    .ToListAsync();
+                    .Select(l => new // Select raw data needed for calculation
+                    {
+                        l.OwnerId,
+                        l.Type,
+                        l.StartDate,
+                        l.EndDate,
+                        l.IsStartHalfDay,
+                        l.IsEndHalfDay
+                    })
+                    .ToListAsync(); // Fetch data into memory
 
-                // Calculate taken days per user per type in memory
-                var takenLeavesSummary = approvedLeaves
-                    .GroupBy(l => new { l.OwnerId, l.Type })
+                // 2. Calculate duration and group in memory
+                var takenLeavesSummary = approvedLeavesData
+                    .GroupBy(l => new { l.OwnerId, l.Type }) // Group by user and leave type
                     .Select(g => new
                     {
                         g.Key.OwnerId,
                         g.Key.Type,
-                        // IMPORTANT: Add +1 if EndDate is inclusive of the leave period
-                        TotalDaysTaken = g.Sum(l => (int)(l.EndDate.Date - l.StartDate.Date).TotalDays + 1)
+                        // Calculate duration for each leave IN THE GROUP using flags, then sum
+                        TotalDurationTaken = g.Sum(l =>
+                           CalculateLeaveDuration(l.StartDate, l.EndDate, l.IsStartHalfDay, l.IsEndHalfDay) // <-- Use helper
+                        )
                     })
-                    .ToList(); // Bring grouped summary into memory
+                    .ToList(); // Result is now in memory
 
-                // Map the summary back to the user DTOs
+                // 3. Map the summary back to the user DTOs
                 foreach (var user in users)
                 {
-                    var userTaken = takenLeavesSummary.Where(t => t.OwnerId == user.Id).ToList();
+                    var userTakenSummary = takenLeavesSummary.Where(t => t.OwnerId == user.Id).ToList();
                     user.LeavesTaken = new LeavesTakenDto
                     {
-                        AnnualLeavesTaken = userTaken.FirstOrDefault(t => t.Type == (int)LeaveType.Annual)?.TotalDaysTaken ?? 0,
-                        SickLeavesTaken = userTaken.FirstOrDefault(t => t.Type == (int)LeaveType.Sick)?.TotalDaysTaken ?? 0,
-                        SpecialLeavesTaken = userTaken.FirstOrDefault(t => t.Type == (int)LeaveType.Special)?.TotalDaysTaken ?? 0,
+                        AnnualLeavesTaken = userTakenSummary.FirstOrDefault(t => t.Type == (int)LeaveType.Annual)?.TotalDurationTaken ?? 0m,
+                        SickLeavesTaken = userTakenSummary.FirstOrDefault(t => t.Type == (int)LeaveType.Sick)?.TotalDurationTaken ?? 0m,
+                        SpecialLeavesTaken = userTakenSummary.FirstOrDefault(t => t.Type == (int)LeaveType.Special)?.TotalDurationTaken ?? 0m,
+                        // Note: Unpaid leave duration isn't typically tracked against a balance here
                     };
                 }
             }
             // --- End of Taken Leaves Calculation ---
-
 
             var response = new PaginatedResponse<UserListItemDto>
             {
@@ -211,5 +220,40 @@ public static class UsersApi
         }).RequireAuthorization(pb => pb.RequireCurrentUser());
 
         return group;
+    }
+
+    // Helper function to calculate duration (mirrors Leave.CalculateLeaveDuration)
+    // Keep this consistent with the logic in Leave.cs
+    private static decimal CalculateLeaveDuration(DateTime startDate, DateTime endDate, bool isStartHalf, bool isEndHalf)
+    {
+        // Ensure start is not after end (basic validation)
+        if (startDate.Date > endDate.Date) return 0m;
+
+        // Single Day Leave
+        if (startDate.Date == endDate.Date)
+        {
+            // If either is marked as half, it's 0.5. If neither, it's 1.0.
+            // If both are marked (invalid state), treat as 0.5 for calculation.
+            return (isStartHalf || isEndHalf) ? 0.5m : 1.0m;
+        }
+
+        // Multi-Day Leave
+        decimal duration = 0m;
+
+        // Start day duration
+        duration += isStartHalf ? 0.5m : 1.0m;
+
+        // End day duration
+        duration += isEndHalf ? 0.5m : 1.0m;
+
+        // Full days in between
+        // Subtract 1 because we've already accounted for the start and end days partially/fully.
+        int fullDaysBetween = (int)(endDate.Date - startDate.Date).TotalDays - 1;
+        if (fullDaysBetween > 0)
+        {
+            duration += fullDaysBetween;
+        }
+
+        return duration;
     }
 }

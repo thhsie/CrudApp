@@ -25,12 +25,17 @@ export const LeaveForm = ({ onSubmit, isSubmitting }: LeaveFormProps) => {
     startDate: '',
     endDate: '',
     type: LeaveType.Annual, // Default selection
+    isStartHalfDay: false,
+    isEndHalfDay: false,
   });
   const [error, setError] = useState<string | null>(null);
   const [selectedStartDate, setSelectedStartDate] = useState<Date | undefined>(undefined);
   const [selectedEndDate, setSelectedEndDate] = useState<Date | undefined>(undefined);
   const [openModal, setOpenModal] = useState<OpenModalType>(null);
   const modalRef = useRef<HTMLDialogElement>(null);
+
+  const [isStartHalfDay, setIsStartHalfDay] = useState<boolean>(false);
+  const [isEndHalfDay, setIsEndHalfDay] = useState<boolean>(false);
 
   useEffect(() => {
     const parseDate = (dateStr: string): Date | undefined => {
@@ -68,6 +73,7 @@ export const LeaveForm = ({ onSubmit, isSubmitting }: LeaveFormProps) => {
           const newStartDate = date ? format(date, 'yyyy-MM-dd') : '';
           setSelectedStartDate(date);
           setLeaveRequest(prev => ({ ...prev, startDate: newStartDate }));
+          if (!date) setIsStartHalfDay(false);
           if (date && selectedEndDate && date > selectedEndDate) {
               setSelectedEndDate(undefined);
               setLeaveRequest(prev => ({ ...prev, endDate: '' }));
@@ -78,10 +84,11 @@ export const LeaveForm = ({ onSubmit, isSubmitting }: LeaveFormProps) => {
               setError("End date cannot be before the start date.");
               return;
           }
-           const newEndDate = date ? format(date, 'yyyy-MM-dd') : '';
-           setSelectedEndDate(date);
-           setLeaveRequest(prev => ({ ...prev, endDate: newEndDate }));
-           setOpenModal(null);
+          if (!date) setIsEndHalfDay(false);
+          const newEndDate = date ? format(date, 'yyyy-MM-dd') : '';
+          setSelectedEndDate(date);
+          setLeaveRequest(prev => ({ ...prev, endDate: newEndDate }));
+          setOpenModal(null);
       }
   };
 
@@ -96,7 +103,21 @@ export const LeaveForm = ({ onSubmit, isSubmitting }: LeaveFormProps) => {
          setError("End date cannot be before start date.");
          return;
      }
-    onSubmit(leaveRequest);
+     // Add validation for single day half/half
+     if (leaveRequest.startDate === leaveRequest.endDate && isStartHalfDay && isEndHalfDay) {
+         setError("Cannot select both first and last day as half for a single day leave.");
+         return;
+     }
+
+    onSubmit({
+        ...leaveRequest,
+        isStartHalfDay: isStartHalfDay,
+        isEndHalfDay: isEndHalfDay
+    });
+
+    // Optionally reset flags after successful submission (handled in parent usually)
+    // setIsStartHalfDay(false);
+    // setIsEndHalfDay(false);
   };
 
   const today = new Date();
@@ -154,6 +175,54 @@ export const LeaveForm = ({ onSubmit, isSubmitting }: LeaveFormProps) => {
                 </button>
             </label>
         </div>
+
+        {/* --- Half Day Selection --- */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0 mt-[-10px] mb-2"> {/* Adjust grid/margins */}
+          {/* Start Half Day Checkbox */}
+          <div className="form-control">
+            <label className="label cursor-pointer justify-start gap-2 py-1"> {/* Reduced padding */}
+              <input
+                type="checkbox"
+                className="checkbox checkbox-primary checkbox-sm"
+                checked={isStartHalfDay}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setIsStartHalfDay(checked);
+                  // Validation: If single day and end is checked, uncheck end
+                  if (checked && leaveRequest.startDate && leaveRequest.startDate === leaveRequest.endDate && isEndHalfDay) {
+                    setIsEndHalfDay(false);
+                  }
+                  setError(null); // Clear error on change
+                }}
+                disabled={!leaveRequest.startDate || isSubmitting}
+              />
+              <span className="label-text text-sm">First day is half day (AM)</span>
+            </label>
+          </div>
+
+          {/* End Half Day Checkbox */}
+          <div className="form-control">
+            <label className="label cursor-pointer justify-start gap-2 py-1"> {/* Reduced padding */}
+              <input
+                type="checkbox"
+                className="checkbox checkbox-primary checkbox-sm"
+                checked={isEndHalfDay}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setIsEndHalfDay(checked);
+                   // Validation: If single day and start is checked, uncheck start
+                   if (checked && leaveRequest.endDate && leaveRequest.startDate === leaveRequest.endDate && isStartHalfDay) {
+                     setIsStartHalfDay(false);
+                   }
+                  setError(null); // Clear error on change
+                }}
+                disabled={!leaveRequest.endDate || isSubmitting}
+              />
+              <span className="label-text text-sm">Last day is half day (PM)</span>
+            </label>
+          </div>
+        </div>
+        {/* --- End Half Day Selection --- */}
 
         {/* Submit Button */}
         <div className="form-control pt-4 flex items-end">

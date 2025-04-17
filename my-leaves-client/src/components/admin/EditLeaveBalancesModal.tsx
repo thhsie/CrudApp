@@ -68,14 +68,20 @@ export const EditLeaveBalancesModal = ({
   // Handler for input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setValidationError(null); // Clear validation error on change
-    const numericValue = parseInt(value, 10);
+    setValidationError(null);
 
-    // Allow empty input (treat as 0) or positive integers
-    if (value === '' || ( !isNaN(numericValue) && numericValue >= 0 ) ) {
+    let numericValue = parseFloat(value);
+
+    if (!Number.isInteger(numericValue) && numericValue % 0.5 !== 0) {
+        numericValue = Math.round(numericValue * 2) / 2;
+    }
+
+    // Allow empty input (treat as 0) or non-negative numbers
+    if (value === '' || (!isNaN(numericValue) && numericValue >= 0)) {
         setBalances(prev => ({
             ...prev,
-            [name]: value === '' ? 0 : numericValue, // Store number, default empty to 0
+            // Store number, default empty to 0. Use NaN check.
+            [name]: value === '' ? 0 : (isNaN(numericValue) ? prev[name as keyof LeaveBalancesUpdateDto] : numericValue),
         }));
     } else {
         // Set validation error for immediate feedback if negative or non-numeric
@@ -141,6 +147,7 @@ export const EditLeaveBalancesModal = ({
                 value={balances.paidLeavesBalance} // Controlled component
                 onChange={handleChange}
                 className={`input input-bordered w-full ${displayError ? 'input-error' : ''}`} // Highlight input on error
+                step="0.5"
                 min="0" // HTML5 validation
                 required
                 disabled={isSaving} // Disable when save is in progress
@@ -159,6 +166,7 @@ export const EditLeaveBalancesModal = ({
                 value={balances.sickLeavesBalance}
                 onChange={handleChange}
                 className={`input input-bordered w-full ${displayError ? 'input-error' : ''}`}
+                step="0.5"
                 min="0"
                 required
                 disabled={isSaving}
@@ -176,6 +184,7 @@ export const EditLeaveBalancesModal = ({
                  value={balances.specialLeavesBalance}
                  onChange={handleChange}
                  className={`input input-bordered w-full ${displayError ? 'input-error' : ''}`}
+                 step="0.5"
                  min="0"
                  required
                  disabled={isSaving}

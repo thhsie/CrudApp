@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 public class LeaveBalances
 {
-    public LeaveBalances(int annualLeavesBalance, int sickLeavesBalance, int specialLeavesBalance)
+    public LeaveBalances(decimal annualLeavesBalance, decimal sickLeavesBalance, decimal specialLeavesBalance)
     {
         AnnualLeavesBalance = annualLeavesBalance;
         SickLeavesBalance = sickLeavesBalance;
@@ -11,17 +11,16 @@ public class LeaveBalances
 
     public LeaveBalances() : this(0, 0, 0) { }
 
-    // Changed to auto-properties with getters and setters
-    public int AnnualLeavesBalance { get; set; }
-    public int SickLeavesBalance { get; set; }
-    public int SpecialLeavesBalance { get; set; }
+    public decimal AnnualLeavesBalance { get; set; }
+    public decimal SickLeavesBalance { get; set; }
+    public decimal SpecialLeavesBalance { get; set; }
 
-    public void IncreaseAnnualLeaves(int amount)
+    public void IncreaseAnnualLeaves(decimal amount)
     {
         AnnualLeavesBalance += amount;
     }
 
-    public bool DecreaseAnnualLeaves(int amount)
+    public bool DecreaseAnnualLeaves(decimal amount)
     {
         if (amount > AnnualLeavesBalance)
         {
@@ -31,12 +30,12 @@ public class LeaveBalances
         return true;
     }
 
-    public void IncreaseSickLeaves(int amount)
+    public void IncreaseSickLeaves(decimal amount)
     {
         SickLeavesBalance += amount;
     }
 
-    public bool DecreaseSickLeaves(int amount)
+    public bool DecreaseSickLeaves(decimal amount)
     {
         if (amount > SickLeavesBalance)
         {
@@ -46,12 +45,12 @@ public class LeaveBalances
         return true;
     }
 
-    public void IncreaseSpecialLeaves(int amount)
+    public void IncreaseSpecialLeaves(decimal amount)
     {
         SpecialLeavesBalance += amount;
     }
 
-    public bool DecreaseSpecialLeaves(int amount)
+    public bool DecreaseSpecialLeaves(decimal amount)
     {
         if (amount > SpecialLeavesBalance)
         {
@@ -65,12 +64,12 @@ public class LeaveBalances
 // We will use this DTO to assign balances from a PUT endpoint
 public class LeaveBalancesUpdateRequest
 {
-    [Range(0, int.MaxValue, ErrorMessage = $"The balance cannot be negative")]
-    public int PaidLeavesBalance { get; set; }
+    [Range(0.0, (double)decimal.MaxValue, ErrorMessage = $"The balance cannot be negative")]
+    public decimal PaidLeavesBalance { get; set; }
 
-    [Range(0, int.MaxValue, ErrorMessage = $"The balance cannot be negative")]
-    public int SickLeavesBalance { get; set; }
+    [Range(0.0, (double)decimal.MaxValue, ErrorMessage = $"The balance cannot be negative")]
+    public decimal SickLeavesBalance { get; set; }
 
-    [Range(0, int.MaxValue, ErrorMessage = $"The balance cannot be negative")]
-    public int SpecialLeavesBalance { get; set; }
+    [Range(0.0, (double)decimal.MaxValue, ErrorMessage = $"The balance cannot be negative")]
+    public decimal SpecialLeavesBalance { get; set; }
 }
