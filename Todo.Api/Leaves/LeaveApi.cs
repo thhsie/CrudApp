@@ -171,7 +171,6 @@ internal static class LeaveApi
                          Status = leave.Status,
                          IsStartHalfDay = leave.IsStartHalfDay,
                          IsEndHalfDay = leave.IsEndHalfDay,
-                         s
                          OwnerEmail = user.Email
                      })
                .FirstOrDefaultAsync();
